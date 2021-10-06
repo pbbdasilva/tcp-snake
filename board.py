@@ -16,10 +16,10 @@ class Board:
         self.dx = [ 1, 0, -1,  0 ]
         self.dy = [ 0, 1,  0, -1 ]
 
-    def init_board( self, size ):
-        board = [ [ sq.EMPTY for i in range( size ) ] for j in range( size ) ]
-        board[ math.floor( size/2 ) ][ math.floor( size/4 ) ] = sq.P1
-        board[ math.floor( size/2 ) ][ math.floor( 3*size/4 ) ] = sq.P2
+    def init_board( self ):
+        board = [ [ sq.EMPTY for i in range( self.size ) ] for j in range( self.size ) ]
+        board[ math.floor( self.size/2 ) ][ math.floor( self.size/4 ) ] = sq.P1
+        board[ math.floor( self.size/2 ) ][ math.floor( 3*self.size/4 ) ] = sq.P2
 
         return board
 
@@ -36,7 +36,13 @@ class Board:
         if ( next_y < 0 or next_y > self.size ):
             return -1
 
+        if ( self.board[ next_x ][ next_y ] != sq.EMPTY ):
+            return 0
+
         self.board[ next_x ][ next_y ] = player
+        self.p[ player ].update( next_x, next_y )
+
+        return 1
 
     def show( self ):
         pass
