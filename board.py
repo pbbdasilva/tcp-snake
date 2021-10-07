@@ -5,9 +5,8 @@ import math
 
 class Board:
     def __init__( self, size, addr1, addr2 ):
-        self.players = { sq.P1 : 0, sq.P2 : 1 }
-        self.p = [  Player(sq.P1, addr1, math.floor(size/2), math.floor(size/4)),
-                    Player(sq.P2, addr2, math.floor(size/2), math.floor(3*size/4)) ]
+        self.players = { sq.P1 : Player(sq.P1, addr1, math.floor(size/2), math.floor(size/4)),
+                         sq.P2 : Player(sq.P2, addr2, math.floor(size/2), math.floor(3*size/4)) }
 
         self.size = size
         self.board = self.init_board( )
@@ -24,23 +23,23 @@ class Board:
         return board
 
     def move( self, player, nxt_direction ):
-        curr_x = self.p[ player ].x
-        curr_y = self.p[ player ].y
+        curr_x = self.players[ player ].x
+        curr_y = self.players[ player ].y
 
         next_x = curr_x + self.dx[ self.directions[ nxt_direction ] ]
         next_y = curr_y + self.dy[ self.directions[ nxt_direction ] ]
 
-        if ( next_x < 0 or next_x > self.size ):
-            return -1
+        next_x = max(next_x, 0)
+        next_x = min(next_x, self.size - 1)
 
-        if ( next_y < 0 or next_y > self.size ):
-            return -1
+        next_y = max(next_y, 0)
+        next_y = min(next_y, self.size - 1)
 
         if ( self.board[ next_x ][ next_y ] != sq.EMPTY ):
             return 0
 
         self.board[ next_x ][ next_y ] = player
-        self.p[ player ].update( next_x, next_y )
+        self.players[ player ].update( next_x, next_y )
 
         return 1
 
@@ -51,7 +50,7 @@ class Board:
             print('\n')
 
 def main():
-    b = Board( 4 ,1,2)
+    b = Board( 10 , 1, 2 )
     b.show()
 
 if ( __name__ == '__main__' ):
