@@ -44,10 +44,7 @@ class Board:
         return 1
 
     def show( self ):
-        for i in range(0,self.size):
-            for j in range(0, self.size):
-                print(self.board[i][j].value,end = ' ')
-            print('\n')
+        pass
 
 def main():
     b = Board( 10 , 1, 2 )
