@@ -2,13 +2,18 @@ from enums import Squares as sq
 from enums import Directions as dir
 from player import Player
 import math
+import curses
+import time
 
 class Board:
-    def __init__( self, size, addr1, addr2 ):
+    def __init__( self, size, addr1, addr2, mode):
         self.players = { sq.P1 : Player(sq.P1, addr1, math.floor(size/2), math.floor(size/4)),
                          sq.P2 : Player(sq.P2, addr2, math.floor(size/2), math.floor(3*size/4)) }
 
-        self.size = size
+        
+        if mode == 0: self.size = size
+        if mode == 1: self.size = self.get_N_from_screen_size()
+        
         self.board = self.init_board( )
 
         self.directions = { dir.RIGHT : 0, dir.UP : 1, dir.LEFT : 2, dir.DOWN : 3 }
@@ -44,14 +49,60 @@ class Board:
         return 1
 
     def show( self ):
+        pass
+    
+    def get_current_board(self):
+        board_array = []
+        
         for i in range(0,self.size):
+            aux = []
+            
             for j in range(0, self.size):
-                print(self.board[i][j].value,end = ' ')
-            print('\n')
+                aux.append(self.board[i][j])
+            
+            board_array.append(aux)
+        
+        return board_array
+
+    def show_screen(self,stdscr):
+
+        y_max, x_max = curses.LINES,curses.COLS
+        
+        N = self.size
+        
+        win = curses.newwin(3*N, 3*N, y_max//2 - N//2, x_max//2 - N)
+        win.clear()
+        
+        board_array = self.get_current_board()
+        for line in board_array:
+            for element in line:
+                win.addch(element.value)
+                win.addch(' ')
+            win.addch('\n')
+        
+        win.refresh()
+        
+        time.sleep(10)
+
+    def get_N_from_screen_size(self):
+        stdscr = curses.initscr()
+        
+        y_max, x_max = curses.LINES,curses.COLS
+        N = min(y_max,x_max)
+
+        curses.endwin()
+
+        return N
+    
+    def set_size(self, N):
+        self.size = N
+
+    def p(self):
+        curses.wrapper(self.show_screen)
 
 def main():
-    b = Board( 10 , 1, 2 )
-    b.show()
+    b = Board( 10 , 1, 2 ,1)
+    b.p()
 
 if ( __name__ == '__main__' ):
     main()
