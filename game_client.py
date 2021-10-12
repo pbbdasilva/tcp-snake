@@ -1,5 +1,6 @@
 from board import Board
 from game_client import Protocol_client
+from enums import Squares as sq
 import curses
 import socket
 
@@ -14,6 +15,7 @@ class Game:
         self.port = port
         self.addr = ( self.ip, self.port )
         self.conn = socket.socket()
+        self.player = sq.EMPTY
 
     def set_game( self, screen ):
         curses.start_color()

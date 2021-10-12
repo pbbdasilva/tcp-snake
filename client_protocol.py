@@ -14,3 +14,15 @@ class Protocol_client:
             self.who = sq.P1
         else:
             self.who = sq.P2
+
+    def __str__( self ):
+        protocol_msg = str( self.direction )
+
+        if(self.end_game): protocol_msg += '1'
+        else: protocol_msg += '0'
+
+        if(self.who == sq.P1): protocol_msg += '1'
+        else: protocol_msg += '2'
+
+        return protocol_msg
+
