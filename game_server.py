@@ -6,6 +6,11 @@ from enums import Squares as sq
 from enums import Directions as dir
 
 N = 20
+strDir = { '0' : dir.RIGHT, '1' : dir.UP, '2' : dir.LEFT, '3' : dir.DOWN }
+dirStr = { dir.RIGHT : '0', dir.UP : '1', dir.LEFT : '2', dir.DOWN : '3' }
+
+strPlayer = {'1' : sq.P1, '2' : sq.P2 }
+playerStr = { sq.P1 : '1', sq.P2 : '2' }
 
 class Game:
     def __init__( self, n_players ):
@@ -29,16 +34,18 @@ class Game:
             pass
 
         while( True ):
-            client_msg, player_addr = conn.recvfrom( 5 )
+            client_msg, player_addr = conn.recvfrom( 4 )
             client_msg = client_msg.decode('utf-8')
             if( len(client_msg) != 0 ):
                 print(client_msg)
                 self.lock.acquire()
 
-                dir_idx, player, end_game = self.process_input( client_msg, player_addr )
-                server_msg = self.build_message( dir_idx, player, end_game )
-                for client_conn in self.connections:
-                    self.send_move( client_conn, server_msg )
+                destination, dir_idx, player, end_game = self.process_input( client_msg )
+                server_msg = self.build_message( destination, dir_idx, player, end_game )
+
+                for player_number in range(0, len(self.connections)):
+                    player_move = str(player_number + 1) + server_msg
+                    self.send_move( self.connections[ player_number ], player_move )
 
                 self.lock.release()
 
@@ -51,25 +58,19 @@ class Game:
     def send_move( self, conn, server_msg ):
         conn.send( server_msg.encode('utf-8') )
 
-    def process_input( self, msg, player_addr ):
+    def process_input( self, msg ):
         dir_idx = -1
 
-        if(msg[0] == '0'): dir_idx = dir.RIGHT
-        elif(msg[0] == '1'): dir_idx = dir.UP
-        elif(msg[0] == '2'): dir_idx = dir.DOWN
-        elif(msg[0] == '3'): dir_idx = dir.LEFT
-        else: raise ValueError("direction was not one of the default values")
-
-        if(msg[1] == '1'): player = sq.P1
-        else: player = sq.P2
+        destination = strPlayer[ msg[0] ]
+        dir_idx = strDir[ msg[1] ]
+        player = strPlayer[ msg[2] ]
 
         end_game = True
-
         game_status = self.board.move( player, dir_idx )
         if( game_status == 0 ):
             end_game = False
 
-        return ( dir_idx, player, end_game )
+        return ( destination, dir_idx, player, end_game )
 
     def run( self ):
         print("[WAITING] Waiting for connections...")
