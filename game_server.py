@@ -34,43 +34,47 @@ class Game:
             pass
 
         while( True ):
-            client_msg, player_addr = conn.recvfrom( 4 )
-            client_msg = client_msg.decode('utf-8')
-            if( len(client_msg) != 0 ):
-                print(client_msg)
-                self.lock.acquire()
+            bytes_received = 0
+            client_msg = ""
 
-                destination, dir_idx, player, end_game = self.process_input( client_msg )
-                server_msg = self.build_message( destination, dir_idx, player, end_game )
+            while(bytes_received < 4):
+                tmp_msg, player_addr = conn.recvfrom( 4 )
+                tmp_msg = tmp_msg.decode('utf-8')
+                bytes_received += len(tmp_msg)
+                client_msg += tmp_msg
 
-                for player_number in range(0, len(self.connections)):
-                    player_move = str(player_number + 1) + server_msg
-                    self.send_move( self.connections[ player_number ], player_move )
+            print(client_msg)
+            self.lock.acquire()
 
-                self.lock.release()
+            destination, dir_idx, player, end_game = self.process_input( client_msg )
+            server_msg = self.build_message( destination, dir_idx, player, end_game )
 
-                if(end_game): return 0
+            for player_number in range(0, len(self.connections)):
+                player_move = str(player_number + 1) + server_msg
+                self.send_move( self.connections[ player_number ], player_move )
 
-    def build_message( self, dir_idx, player, end_game ):
-        protocol = Protocol_client( dir_idx, end_game, player )
+            self.lock.release()
+
+            if(end_game): return 0
+
+    def build_message( self, destination, dir_idx, player, end_game ):
+        protocol = Protocol_client( destination=destination, direction=dir_idx, end_game=end_game, who=player )
         return str( protocol )
 
     def send_move( self, conn, server_msg ):
         conn.send( server_msg.encode('utf-8') )
 
     def process_input( self, msg ):
-        dir_idx = -1
-
         destination = strPlayer[ msg[0] ]
         dir_idx = strDir[ msg[1] ]
-        player = strPlayer[ msg[2] ]
+        who_moved = strPlayer[ msg[2] ]
 
         end_game = True
-        game_status = self.board.move( player, dir_idx )
-        if( game_status == 0 ):
+        game_status = self.board.move( who_moved, dir_idx )
+        if( game_status == 1 ):
             end_game = False
 
-        return ( destination, dir_idx, player, end_game )
+        return ( destination, dir_idx, who_moved, end_game )
 
     def run( self ):
         print("[WAITING] Waiting for connections...")
