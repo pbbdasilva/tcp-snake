@@ -1,7 +1,6 @@
 class Player:
-    def __init__( self, color,addr, init_x, init_y ):
+    def __init__( self, color, init_x, init_y ):
         self.color = color
-        self.addr = addr
         self.x = init_x
         self.y = init_y
 

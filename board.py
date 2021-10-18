@@ -4,12 +4,12 @@ from player import Player
 import math
 
 class Board:
-    def __init__( self, size, addr1, addr2 ):
-        self.players = { sq.P1 : Player(sq.P1, addr1, math.floor(size/2), math.floor(size/4)),
-                         sq.P2 : Player(sq.P2, addr2, math.floor(size/2), math.floor(3*size/4)) }
+    def __init__( self, size ):
+        self.players = { sq.P1 : Player(sq.P1, math.floor(size/2), math.floor(size/4)),
+                         sq.P2 : Player(sq.P2, math.floor(size/2), math.floor(3*size/4)) }
 
         self.size = size
-        self.board = self.init_board( )
+        self.board = self.init_board()
 
         self.directions = { dir.RIGHT : 0, dir.UP : 1, dir.LEFT : 2, dir.DOWN : 3 }
         self.dx = [ 1, 0, -1,  0 ]
@@ -44,10 +44,7 @@ class Board:
         return 1
 
     def show( self ):
-        for i in range(0,self.size):
-            for j in range(0, self.size):
-                print(self.board[i][j].value,end = ' ')
-            print('\n')
+        pass
 
 def main():
     b = Board( 10 , 1, 2 )
