@@ -9,15 +9,21 @@ N = 20
 FPS = 60.0
 N_BUTTONS = 3
 
+strPlayer = {'1' : sq.P1, '2' : sq.P2 }
+
 class Game:
     def __init__( self, port ):
         self.running = True
+
         self.start_game = False
         self.ip = socket.gethostbyname( socket.gethostname() )
         self.port = port
         self.addr = ( self.ip, self.port )
         self.conn = socket.socket()
         self.player = sq.EMPTY
+
+    def assign_player( self, msg ):
+        self.player = strPlayer[ msg[0] ]
 
     def set_game( self ):
         curses.start_color()
@@ -148,8 +154,12 @@ class Game:
         return index
 
     def waiting_window( self, screen ):
+        self.conn.connect( self.addr )
 
+        screen.nodelay( True )
         k = 0
+        ready = False
+
         height, width = screen.getmaxyx()
         waitstr = "Aguardando o 2o Jogador se Conectar..."
         exitqstr = "Pressione 'q' para cancelar a CONEXAO"
@@ -157,22 +167,30 @@ class Game:
         start_x_wait = int((width // 2) - (len(waitstr) // 2) - (len(waitstr) % 2)) - 2
         start_x_exit = int((width // 2) - (len(exitqstr) // 2) - (len(exitqstr) % 2)) - 2
 
-        while (not self.conn_ready() and k != ord('q')):
-
+        while ( not ready and k != ord('q') ):
+            screen.clear()
             textpad.rectangle(screen, height // 2 - 1, start_x_wait-1, height // 2 + 1, start_x_wait + len(waitstr) )
 
             screen.addstr( height // 2, start_x_wait, waitstr )
             screen.addstr( 2*height // 3, start_x_exit, exitqstr )
 
             k = screen.getch()
-
-            screen.clear()
             screen.refresh()
 
-        return 0
+            msg = self.conn.recv( 4 )
+            msg = msg.decode( 'utf-8' )
 
-    def conn_ready( self ):
-        pass
+            if(len(msg) != 0):
+                screen.clear()
+                textpad.rectangle(screen, height // 2 - 1, start_x_wait-1, height // 2 + 1, start_x_wait + len(waitstr) )
+                screen.addstr( height // 2, start_x_wait + 10, "Jogadores conectados" )
+                screen.addstr( 2*height // 3, start_x_exit + 15, "Prepare-se" )
+                screen.refresh()
+                curses.napms(5000)
+                self.assign_player( msg )
+                ready = True
+
+        return 0
 
     def game_window( self, screen ):
         board = Board( N )
@@ -180,6 +198,7 @@ class Game:
         self.set_game()
         screen.clear()
         self.render( screen )
+        screen.refresh()
 
         key_pressed = 0
         server_input = Protocol_client()
@@ -188,12 +207,13 @@ class Game:
             acc = 0.0
 
     def render( self, screen ):
-        pass
+        test = "*****" + self.player.value
+        screen.addstr(0,0, test)
 
     def run( self ):
         self.menu()
         self.waiting()
-        # self.start()
+        self.start()
 
     def menu( self ):
         curses.wrapper( self.menu_window )

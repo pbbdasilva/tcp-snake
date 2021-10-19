@@ -1,3 +1,4 @@
+import time
 from board import Board
 import threading
 import socket
@@ -18,6 +19,7 @@ class Game:
 
         self.lock = threading.Lock()
 
+        self.ready = False
         self.n_connections = 0
         self.connections = []
         self.n_players = n_players
@@ -27,13 +29,28 @@ class Game:
         PORT = 5050
         self.server.bind( (HOST, PORT) )
 
+    def assign_players( self ):
+        if( self.ready ): return 0
+
+        print("[PLAYERS CONNECTED] assigning players to its avatars")
+        for player_number in range( len( self.connections ) ):
+            assign_msg = str(player_number + 1) + "***"
+            self.connections[ player_number ].send( assign_msg.encode('utf-8') )
+
+        self.ready = True
+
     def handle_player( self, conn, addr ):
         print("[NEW CONNECTION]" + str(addr[0]) + ":" + str(addr[1]) + " connected")
 
         while( self.n_connections < self.n_players ):
             pass
 
+        self.lock.acquire()
+        self.assign_players()
+        self.lock.release()
+
         while( True ):
+            print("[LISTENING] waiting on user moves...")
             bytes_received = 0
             client_msg = ""
 
