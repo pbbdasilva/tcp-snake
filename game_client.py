@@ -30,6 +30,7 @@ class Game:
         curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
         curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
         curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_WHITE)
+        curses.init_pair(4,curses.COLOR_GREEN,curses.COLOR_BLACK)
 
     def menu_window( self, screen ):
         self.set_game()
@@ -193,12 +194,10 @@ class Game:
         return 0
 
     def game_window( self, screen ):
-        board = Board( N )
+        self.b = Board( N )
 
         self.set_game()
-        screen.clear()
         self.render( screen )
-        screen.refresh()
 
         key_pressed = 0
         server_input = Protocol_client()
@@ -207,8 +206,36 @@ class Game:
             acc = 0.0
 
     def render( self, screen ):
-        test = "*****" + self.player.value
-        screen.addstr(0,0, test)
+        curses.curs_set( 0 )
+        screen.clear()
+
+        sh, sw = screen.getmaxyx()
+        box = [ [ 3, 3 ], [ sh - 3, sw - 3 ] ]
+
+        textpad.rectangle( screen, box[0][0], box[0][1], box[1][0], box[1][1] )
+
+        y_start, x_start  = sh//2 - N//2, sw//2 - (2*N-1) // 2
+        y,x = y_start,x_start
+
+        for line in self.b.board:
+            for element in line:
+                if element == sq.EMPTY:
+                    screen.addch(y,x,element.value, curses.color_pair(1))
+                elif element == sq.P1:
+                    screen.addch(y,x,element.value, curses.color_pair(2))
+                elif element == sq.P2:
+                    screen.addch(y,x,element.value, curses.color_pair(4))
+
+                x += 2
+
+            x = x_start
+            y += 1
+
+        screen.refresh()
+        screen.getch()
+
+    def update_screen( self, screen ):
+        pass
 
     def run( self ):
         self.menu()
@@ -223,3 +250,10 @@ class Game:
 
     def start( self ):
         curses.wrapper( self.game_window )
+
+def main():
+    g = Game(5050)
+    g.start()
+
+if __name__ == '__main__':
+    main()

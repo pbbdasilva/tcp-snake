@@ -47,8 +47,7 @@ class Board:
         pass
 
 def main():
-    b = Board( 10 , 1, 2 )
-    b.show()
+    b = Board( 10 ,1 ,2 ,1 )
 
 if ( __name__ == '__main__' ):
     main()
