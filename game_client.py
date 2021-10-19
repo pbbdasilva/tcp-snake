@@ -31,7 +31,7 @@ class Game:
         who_moved = strPlayer[ msg[2] ]
 
         end_game = True
-        game_status = self.board.move( who_moved, dir_idx )
+        game_status = self.b.move( who_moved, dir_idx )
         if( game_status == 1 ):
             end_game = False
 
