@@ -210,7 +210,7 @@ class Game:
         sh, sw = screen.getmaxyx()
         box = [ [ 3, 3 ], [ sh - 3, sw - 3 ] ]
 
-        textpad.rectangle( screen, box[0] [0], box[0][1], box[1][0], box[1][1] )
+        textpad.rectangle( screen, box[0][0], box[0][1], box[1][0], box[1][1] )
 
         y_start, x_start  = sh // 2 - N // 2, sw // 2 - (2*N-1) // 2
         y, x = y_start, x_start
