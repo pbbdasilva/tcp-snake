@@ -30,6 +30,7 @@ class Game:
         curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
         curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
         curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_WHITE)
+        curses.init_pair(4,curses.COLOR_GREEN,curses.COLOR_BLACK)
 
     def menu_window( self, screen ):
         self.set_game()
@@ -193,7 +194,7 @@ class Game:
         return 0
 
     def game_window( self, screen ):
-        board = Board( N )
+        self.b = Board( N )
 
         self.set_game()
         screen.clear()
@@ -206,12 +207,10 @@ class Game:
         while( not server_input.end_game ):
             acc = 0.0
 
-    def render( self, screen, board ):
+    def render( self, screen):
         curses.curs_set(0)
 
         sh, sw = screen.getmaxyx()
-        
-        N = len(board)
         
         box = [[3,3],[sh-3,sw-3]]
 
@@ -220,7 +219,7 @@ class Game:
         y_start,x_start  = sh//2-N//2,sw//2-(2*N-1)//2
         y,x = y_start,x_start
         
-        for line in board:
+        for line in self.b.board:
             
             for element in line:
                 if element == sq.EMPTY:
@@ -228,7 +227,7 @@ class Game:
                 elif element == sq.P1:
                     screen.addch(y,x,element.value, curses.color_pair(2))
                 elif element == sq.P2:
-                    screen.addch(y,x,element.value, curses.color_pair(3)) 
+                    screen.addch(y,x,element.value, curses.color_pair(4)) 
                 
                 x = x+2
             
@@ -254,3 +253,6 @@ class Game:
 
     def start( self ):
         curses.wrapper( self.game_window )
+
+g = Game(11)
+g.start()
