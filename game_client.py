@@ -14,8 +14,6 @@ strPlayer = {'1' : sq.P1, '2' : sq.P2 }
 class Game:
     def __init__( self, port ):
         self.running = True
-
-        self.start_game = False
         self.ip = socket.gethostbyname( socket.gethostname() )
         self.port = port
         self.addr = ( self.ip, self.port )
@@ -212,10 +210,10 @@ class Game:
         sh, sw = screen.getmaxyx()
         box = [ [ 3, 3 ], [ sh - 3, sw - 3 ] ]
 
-        textpad.rectangle( screen, box[0][0], box[0][1], box[1][0], box[1][1] )
+        textpad.rectangle( screen, box[0] [0], box[0][1], box[1][0], box[1][1] )
 
-        y_start, x_start  = sh//2 - N//2, sw//2 - (2*N-1) // 2
-        y,x = y_start,x_start
+        y_start, x_start  = sh // 2 - N // 2, sw // 2 - (2*N-1) // 2
+        y, x = y_start, x_start
 
         for line in self.b.board:
             for element in line:
@@ -232,7 +230,6 @@ class Game:
             y += 1
 
         screen.refresh()
-        screen.getch()
 
     def update_screen( self, screen ):
         pass
