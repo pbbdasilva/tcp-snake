@@ -38,7 +38,7 @@ class Game:
 
         first_start_y = 9
 
-        while (k != ord('q')):
+        while ( k != ord('\n') ):
 
             # Initialization
             screen.clear()
@@ -47,8 +47,6 @@ class Game:
                 cursor_y = cursor_y + 5
             elif k == curses.KEY_UP:
                 cursor_y = cursor_y - 5
-            elif k == curses.KEY_ENTER or k == ord('\n'):
-                break
 
             cursor_x = max(0, cursor_x)
             cursor_x = min(width-1, cursor_x)
@@ -68,10 +66,7 @@ class Game:
             # Declaration of strings
             title = "[TRON]"[:width-1]
             subtitle = "Feito por PBPJ, Ganso e Pinkuschu"[:width-1]
-            keystr = "Last key pressed: {}".format(k)[:width-1]
             statusbarstr = "Press 'q' to exit | STATUS BAR | Pos: {}, {}".format(cursor_x, cursor_y)
-            if k == 0:
-                keystr = "No key press detected..."[:width-1]
 
             button = []
             button.append( "Conectar ao Jogo"[:width-1] )
@@ -126,8 +121,6 @@ class Game:
             # Print rest of text
             screen.addstr(start_y + 1, start_x_subtitle, subtitle)
 
-            choicestr = ( (button_size // 2) - (button_size % 2) - 1 ) * " "
-
             for i in range( len(button) ):
                 textpad.rectangle(screen, start_y_first_button + 5 + (i*5), start_x_button ,
                 start_y_first_button + 5 + (i*5) + 3, start_x_button + button_size )
@@ -136,7 +129,7 @@ class Game:
                     screen.attron(curses.color_pair(3))
                 screen.addstr( start_y_first_button + 5 + (i*5) + 1, start_x_text[i], button[i] )
                 screen.addstr( start_y_first_button + 5 + (i*5) + 2, (width // 2) - ( 1 - (width % 2) ) - 1,
-                    ( "[" + choicebutton[i] + "]") )
+                             ( "[" + choicebutton[i] + "]") )
                 if choicebutton[i] == "X":
                     screen.attroff(curses.color_pair(3))
 
@@ -148,7 +141,11 @@ class Game:
             # Wait for next input
             k = screen.getch()
 
-        return 0
+        screen.clear()
+        screen.refresh()
+
+        index = ( cursor_y - first_start_y ) / 5
+        return index
 
     def waiting_window( self, screen ):
 
