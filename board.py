@@ -2,8 +2,6 @@ from enums import Squares as sq
 from enums import Directions as dir
 from player import Player
 import math
-import curses
-import time
 
 class Board:
     def __init__( self, size ):
@@ -49,8 +47,7 @@ class Board:
         pass
 
 def main():
-    b = Board( 10 , 1, 2 ,1)
-    b.p()
+    b = Board( 10 ,1 ,2 ,1 )
 
 if ( __name__ == '__main__' ):
     main()
