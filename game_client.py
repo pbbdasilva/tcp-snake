@@ -197,9 +197,7 @@ class Game:
         self.b = Board( N )
 
         self.set_game()
-        screen.clear()
         self.render( screen )
-        screen.refresh()
 
         key_pressed = 0
         server_input = Protocol_client()
@@ -207,37 +205,36 @@ class Game:
         while( not server_input.end_game ):
             acc = 0.0
 
-    def render( self, screen):
-        curses.curs_set(0)
+    def render( self, screen ):
+        curses.curs_set( 0 )
+        screen.clear()
 
         sh, sw = screen.getmaxyx()
-        
-        box = [[3,3],[sh-3,sw-3]]
+        box = [ [ 3, 3 ], [ sh - 3, sw - 3 ] ]
 
-        textpad.rectangle(screen, box[0][0],box[0][1],box[1][0], box[1][1])
-        
-        y_start,x_start  = sh//2-N//2,sw//2-(2*N-1)//2
+        textpad.rectangle( screen, box[0][0], box[0][1], box[1][0], box[1][1] )
+
+        y_start, x_start  = sh//2 - N//2, sw//2 - (2*N-1) // 2
         y,x = y_start,x_start
-        
+
         for line in self.b.board:
-            
             for element in line:
                 if element == sq.EMPTY:
                     screen.addch(y,x,element.value, curses.color_pair(1))
                 elif element == sq.P1:
                     screen.addch(y,x,element.value, curses.color_pair(2))
                 elif element == sq.P2:
-                    screen.addch(y,x,element.value, curses.color_pair(4)) 
-                
-                x = x+2
-            
+                    screen.addch(y,x,element.value, curses.color_pair(4))
+
+                x += 2
+
             x = x_start
-            y = y+1
-        
+            y += 1
+
         screen.refresh()
         screen.getch()
-    
-    def update_screen(self,screen):
+
+    def update_screen( self, screen ):
         pass
 
     def run( self ):
@@ -254,5 +251,9 @@ class Game:
     def start( self ):
         curses.wrapper( self.game_window )
 
-g = Game(11)
-g.start()
+def main():
+    g = Game(5050)
+    g.start()
+
+if __name__ == '__main__':
+    main()
