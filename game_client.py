@@ -1,6 +1,7 @@
 import curses
 from curses import textpad
 import socket
+import threading
 from board import Board
 from client_protocol import Protocol_client
 from enums import Squares as sq
@@ -9,7 +10,11 @@ N = 20
 FPS = 60.0
 N_BUTTONS = 3
 
+strDir = { '0' : dir.RIGHT, '1' : dir.UP, '2' : dir.LEFT, '3' : dir.DOWN }
+dirStr = { dir.RIGHT : '0', dir.UP : '1', dir.LEFT : '2', dir.DOWN : '3' }
+
 strPlayer = {'1' : sq.P1, '2' : sq.P2 }
+playerStr = { sq.P1 : '1', sq.P2 : '2' }
 
 class Game:
     def __init__( self, port ):
@@ -19,12 +24,40 @@ class Game:
         self.addr = ( self.ip, self.port )
         self.conn = socket.socket()
         self.player = sq.EMPTY
+        self.lock = threading.Lock()
+
+    def process_input( self, msg ):
+        dir_idx = strDir[ msg[1] ]
+        who_moved = strPlayer[ msg[2] ]
+
+        end_game = True
+        game_status = self.board.move( who_moved, dir_idx )
+        if( game_status == 1 ):
+            end_game = False
+
+        self.running = not end_game
+
+    def handle_input( self ):
+        while( True ):
+            bytes_received = 0
+            server_msg = ""
+
+            while(bytes_received < 4):
+                tmp_msg = self.conn.recv( 4 )
+                tmp_msg = tmp_msg.decode('utf-8')
+                bytes_received += len(tmp_msg)
+                server_msg += tmp_msg
+
+            self.lock.acquire()
+            self.process_input( server_msg )
+            self.lock.release()
 
     def assign_player( self, msg ):
         self.player = strPlayer[ msg[0] ]
 
     def set_game( self ):
         curses.start_color()
+        curses.curs_set( 0 )
         curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
         curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
         curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_WHITE)
@@ -195,16 +228,19 @@ class Game:
         self.b = Board( N )
 
         self.set_game()
+        screen.keypad( True )
+        screen.nodelay( True )
         self.render( screen )
 
         key_pressed = 0
-        server_input = Protocol_client()
+        thread = threading.Thread(target=self.handle_input)
+        thread.name = "server_io"
+        thread.start()
 
-        while( not server_input.end_game ):
+        while( self.running ):
             acc = 0.0
 
     def render( self, screen ):
-        curses.curs_set( 0 )
         screen.clear()
 
         sh, sw = screen.getmaxyx()
