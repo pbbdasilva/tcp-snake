@@ -2,6 +2,7 @@ import curses
 from curses import textpad
 import socket
 import threading
+import time
 from board import Board
 from client_protocol import Protocol_client
 from enums import Squares as sq
@@ -25,6 +26,12 @@ class Game:
         self.conn = socket.socket()
         self.player = sq.EMPTY
         self.lock = threading.Lock()
+
+    def send_move( self, direction ):
+        protocol = Protocol_client( direction=int( dirStr[ direction ] ), who=self.player )
+        self.lock.acquire()
+        self.conn.send( str( protocol ).encode('utf-8') )
+        self.lock.release()
 
     def process_input( self, msg ):
         dir_idx = strDir[ msg[1] ]
@@ -237,8 +244,28 @@ class Game:
         thread.name = "server_io"
         thread.start()
 
+        acc = 0.0
         while( self.running ):
-            acc = 0.0
+            t1 = time.time()
+            key_pressed = screen.getch()
+
+            if( key_pressed == -1 ):
+                pass
+            elif(key_pressed == curses.KEY_UP):
+                self.send_move( dir.UP )
+            elif(key_pressed == curses.KEY_RIGHT):
+                self.send_move( dir.RIGHT )
+            elif(key_pressed == curses.KEY_LEFT):
+                self.send_move( dir.LEFT )
+            elif(key_pressed == curses.KEY_DOWN):
+                self.send_move( dir.DOWN )
+
+            dt = time.time() - t1
+            acc += dt
+
+            if( acc >= 1/FPS ):
+                self.render( screen )
+                acc = 0.0
 
     def render( self, screen ):
         screen.clear()
@@ -266,9 +293,6 @@ class Game:
             y += 1
 
         screen.refresh()
-
-    def update_screen( self, screen ):
-        pass
 
     def run( self ):
         self.menu()
