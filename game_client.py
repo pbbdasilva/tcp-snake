@@ -6,6 +6,7 @@ import time
 from board import Board
 from client_protocol import Protocol_client
 from enums import Squares as sq
+from enums import Directions as dir
 
 N = 20
 FPS = 60.0
