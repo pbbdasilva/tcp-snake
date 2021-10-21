@@ -3,6 +3,7 @@ from curses import textpad
 import socket
 import threading
 import time
+import sys
 from board import Board
 from client_protocol import Protocol_client
 from enums import Squares as sq
@@ -11,6 +12,7 @@ from enums import Directions as dir
 N = 20
 FPS = 60.0
 N_BUTTONS = 3
+PROTOCOL_SIZE = 4
 
 strDir = { '0' : dir.RIGHT, '1' : dir.UP, '2' : dir.LEFT, '3' : dir.DOWN }
 dirStr = { dir.RIGHT : '0', dir.UP : '1', dir.LEFT : '2', dir.DOWN : '3' }
@@ -21,12 +23,18 @@ playerStr = { sq.P1 : '1', sq.P2 : '2' }
 class Game:
     def __init__( self, port ):
         self.running = True
+        self.winner = sq.EMPTY
+
         self.ip = socket.gethostbyname( socket.gethostname() )
         self.port = port
         self.addr = ( self.ip, self.port )
         self.conn = socket.socket()
+
         self.player = sq.EMPTY
         self.lock = threading.Lock()
+
+        self.screen_idx = 0
+        self.screens = [ self.menu, self.waiting, self.settings, self.quit, self.start, self.end ]
 
     def send_move( self, move_direction ):
         protocol = Protocol_client( destination=self.player, direction=int( dirStr[ move_direction ] ), who=self.player )
@@ -37,26 +45,24 @@ class Game:
         self.lock.release()
 
     def process_input( self, msg ):
+        dir_idx = strDir[ msg[1] ]
+        who_moved = strPlayer[ msg[2] ]
 
-        try:
-            dir_idx = strDir[ msg[1] ]
-            who_moved = strPlayer[ msg[2] ]
+        end_game = True
+        game_status = self.b.move( who_moved, dir_idx )
+        if( game_status == 1 ):
+            end_game = False
 
-            end_game = True
-            game_status = self.b.move( who_moved, dir_idx )
-            if( game_status == 1 ):
-                end_game = False
+        self.running = not end_game
+        if( end_game ): self.winner = who_moved
 
-            self.running = not end_game
-        except KeyError:
-            print(msg)
     def handle_input( self ):
-        while( True ):
+        while( self.running ):
             bytes_received = 0
             server_msg = ""
 
-            while(bytes_received < 4):
-                tmp_msg = self.conn.recv( 4 )
+            while( bytes_received < PROTOCOL_SIZE ):
+                tmp_msg = self.conn.recv( PROTOCOL_SIZE )
                 tmp_msg = tmp_msg.decode('utf-8')
                 bytes_received += len(tmp_msg)
                 server_msg += tmp_msg
@@ -76,6 +82,7 @@ class Game:
 
     def menu_window( self, screen ):
         self.set_game()
+        screen.nodelay( False )
 
         k = 0
         height, width = screen.getmaxyx()
@@ -88,8 +95,6 @@ class Game:
         first_start_y = 9
 
         while ( k != ord('\n') ):
-
-            # Initialization
             screen.clear()
 
             if k == curses.KEY_DOWN:
@@ -119,8 +124,8 @@ class Game:
 
             button = []
             button.append( "Conectar ao Jogo"[:width-1] )
-            button.append( "Button TWO but bigger than ONE"[:width-1] )
-            button.append( "Button THREE but ... different"[:width-1] )
+            button.append( "Configurações"[:width-1] )
+            button.append( "Sair"[:width-1] )
 
 
             # Getting the max len between all buttons
@@ -183,18 +188,15 @@ class Game:
                     screen.attroff(curses.color_pair(3))
 
             screen.move(cursor_y, cursor_x)
-
-            #Refresh the screen
             screen.refresh()
 
-            # Wait for next input
             k = screen.getch()
 
         screen.clear()
         screen.refresh()
 
         index = ( cursor_y - first_start_y ) / 5
-        return index
+        return int( index ) + 1
 
     def waiting_window( self, screen ):
         self.conn.connect( self.addr )
@@ -233,7 +235,7 @@ class Game:
                 self.assign_player( msg )
                 ready = True
 
-        return 0
+        return 4
 
     def game_window( self, screen ):
         self.b = Board( N )
@@ -275,6 +277,42 @@ class Game:
                 self.render( screen )
                 acc = 0.0
 
+        return 5
+
+    def winner_window( self, screen ):
+        self.set_game()
+        screen.clear()
+        screen.addstr(20, 20, "victory!!! :)")
+        screen.refresh()
+        curses.napms( 2000 )
+
+        return 0
+
+    def loser_window( self, screen ):
+        self.set_game()
+        screen.clear()
+        screen.addstr(20, 20, "lost ;(")
+        screen.refresh()
+        curses.napms( 2000 )
+
+        return 0
+
+    def settings_window( self, screen ):
+        self.set_game()
+        screen.clear()
+        screen.addstr(20, 20, "In the future you will adjust your settings here...")
+        screen.refresh()
+        curses.napms( 2000 )
+
+        return 0
+
+    def quit_window( self, screen ):
+        self.set_game()
+        screen.clear()
+        screen.addstr(20, 20, "bye :)")
+        screen.refresh()
+        curses.napms( 2000 )
+
     def render( self, screen ):
         t1 = time.time()
         screen.clear()
@@ -305,18 +343,32 @@ class Game:
         screen.refresh()
 
     def run( self ):
-        self.menu()
-        self.waiting()
-        self.start()
+        while( True ):
+            next_idx = self.screens[ self.screen_idx ]()
+            self.screen_idx = next_idx
 
     def menu( self ):
-        curses.wrapper( self.menu_window )
+        return curses.wrapper( self.menu_window )
 
     def waiting( self ):
-        curses.wrapper( self.waiting_window )
+        return curses.wrapper( self.waiting_window )
 
     def start( self ):
-        curses.wrapper( self.game_window )
+        return curses.wrapper( self.game_window )
+
+    def end( self ):
+        self.conn.close()
+        if( self.winner == self.player ):
+            return curses.wrapper( self.winner_window )
+        else:
+            return curses.wrapper( self.loser_window )
+
+    def quit( self ):
+        curses.wrapper( self.quit_window )
+        sys.exit()
+
+    def settings( self ):
+        return curses.wrapper( self.settings_window )
 
 def main():
     g = Game(5050)
