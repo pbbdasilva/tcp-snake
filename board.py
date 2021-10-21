@@ -12,8 +12,8 @@ class Board:
         self.board = self.init_board()
 
         self.directions = { dir.RIGHT : 0, dir.UP : 1, dir.LEFT : 2, dir.DOWN : 3 }
-        self.dx = [ 1, 0, -1,  0 ]
-        self.dy = [ 0, 1,  0, -1 ]
+        self.dy = [ +1, 0, -1,  0 ]
+        self.dx = [ 0, -1,  0, +1 ]
 
     def init_board( self ):
         board = [ [ sq.EMPTY for i in range( self.size ) ] for j in range( self.size ) ]
@@ -28,13 +28,13 @@ class Board:
 
         next_x = curr_x + self.dx[ self.directions[ nxt_direction ] ]
         next_y = curr_y + self.dy[ self.directions[ nxt_direction ] ]
-
+        
         next_x = max(next_x, 0)
         next_x = min(next_x, self.size - 1)
-
+    
         next_y = max(next_y, 0)
         next_y = min(next_y, self.size - 1)
-
+        
         if ( self.board[ next_x ][ next_y ] != sq.EMPTY ):
             return 0
 
@@ -44,10 +44,20 @@ class Board:
         return 1
 
     def show( self ):
-        pass
+        for line in self.board:
+            for element in line:
+                print(element.value,end = ' ')
+                
+            print('\n')
+        print('end')
 
 def main():
-    b = Board( 10 ,1 ,2 ,1 )
+    b = Board( 10)
+    b.show()
+    b.move(sq.P1,dir.DOWN)
+    b.show()
+    b.move(sq.P2,dir.UP)
+    b.show()
 
 if ( __name__ == '__main__' ):
     main()
