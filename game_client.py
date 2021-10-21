@@ -256,16 +256,16 @@ class Game:
             if( key_pressed == -1 ):
                 pass
             elif(key_pressed == curses.KEY_UP):
-                screen.addch(0, 0, '^')
+                screen.addch(1, 0, '^')
                 self.send_move( dir.UP )
             elif(key_pressed == curses.KEY_RIGHT):
-                screen.addch(0, 0, '>')
+                screen.addch(1, 0, '>')
                 self.send_move( dir.RIGHT )
             elif(key_pressed == curses.KEY_LEFT):
-                screen.addch(0, 0, '<')
+                screen.addch(1, 0, '<')
                 self.send_move( dir.LEFT )
             elif(key_pressed == curses.KEY_DOWN):
-                screen.addch(0, 0, 'v')
+                screen.addch(1, 0, 'v')
                 self.send_move( dir.DOWN )
 
             dt = time.time() - t1
