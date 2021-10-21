@@ -15,7 +15,7 @@ N_BUTTONS = 3
 strDir = { '0' : dir.RIGHT, '1' : dir.UP, '2' : dir.LEFT, '3' : dir.DOWN }
 dirStr = { dir.RIGHT : '0', dir.UP : '1', dir.LEFT : '2', dir.DOWN : '3' }
 
-strPlayer = {'1' : sq.P1, '2' : sq.P2 }
+strPlayer = { '1' : sq.P1, '2' : sq.P2 }
 playerStr = { sq.P1 : '1', sq.P2 : '2' }
 
 class Game:
@@ -28,23 +28,26 @@ class Game:
         self.player = sq.EMPTY
         self.lock = threading.Lock()
 
-    def send_move( self, direction ):
-        protocol = Protocol_client( direction=int( dirStr[ direction ] ), who=self.player )
+    def send_move( self, move_direction ):
+        protocol = Protocol_client( direction=int( dirStr[ move_direction ] ), who=self.player )
         self.lock.acquire()
         self.conn.send( str( protocol ).encode('utf-8') )
         self.lock.release()
 
     def process_input( self, msg ):
-        dir_idx = strDir[ msg[1] ]
-        who_moved = strPlayer[ msg[2] ]
 
-        end_game = True
-        game_status = self.b.move( who_moved, dir_idx )
-        if( game_status == 1 ):
-            end_game = False
+        try:
+            dir_idx = strDir[ msg[1] ]
+            who_moved = strPlayer[ msg[2] ]
 
-        self.running = not end_game
+            end_game = True
+            game_status = self.b.move( who_moved, dir_idx )
+            if( game_status == 1 ):
+                end_game = False
 
+            self.running = not end_game
+        except KeyError:
+            print(msg)
     def handle_input( self ):
         while( True ):
             bytes_received = 0
@@ -56,9 +59,7 @@ class Game:
                 bytes_received += len(tmp_msg)
                 server_msg += tmp_msg
 
-            self.lock.acquire()
             self.process_input( server_msg )
-            self.lock.release()
 
     def assign_player( self, msg ):
         self.player = strPlayer[ msg[0] ]
@@ -253,22 +254,27 @@ class Game:
             if( key_pressed == -1 ):
                 pass
             elif(key_pressed == curses.KEY_UP):
+                screen.addch(0, 0, '^')
                 self.send_move( dir.UP )
             elif(key_pressed == curses.KEY_RIGHT):
+                screen.addch(0, 0, '>')
                 self.send_move( dir.RIGHT )
             elif(key_pressed == curses.KEY_LEFT):
+                screen.addch(0, 0, '<')
                 self.send_move( dir.LEFT )
             elif(key_pressed == curses.KEY_DOWN):
+                screen.addch(0, 0, 'v')
                 self.send_move( dir.DOWN )
 
             dt = time.time() - t1
             acc += dt
 
-            if( acc >= 1/FPS ):
+            if( acc >= 3 ):
                 self.render( screen )
                 acc = 0.0
 
     def render( self, screen ):
+        t1 = time.time()
         screen.clear()
 
         sh, sw = screen.getmaxyx()
@@ -292,7 +298,8 @@ class Game:
 
             x = x_start
             y += 1
-
+        dt = time.time() - t1
+        screen.addstr(0, 0, str(dt))
         screen.refresh()
 
     def run( self ):
