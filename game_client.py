@@ -1,15 +1,22 @@
 import curses
 from curses import textpad
 import socket
+import threading
+import time
 from board import Board
 from client_protocol import Protocol_client
 from enums import Squares as sq
+from enums import Directions as dir
 
 N = 20
 FPS = 60.0
 N_BUTTONS = 3
 
-strPlayer = {'1' : sq.P1, '2' : sq.P2 }
+strDir = { '0' : dir.RIGHT, '1' : dir.UP, '2' : dir.LEFT, '3' : dir.DOWN }
+dirStr = { dir.RIGHT : '0', dir.UP : '1', dir.LEFT : '2', dir.DOWN : '3' }
+
+strPlayer = { '1' : sq.P1, '2' : sq.P2 }
+playerStr = { sq.P1 : '1', sq.P2 : '2' }
 
 class Game:
     def __init__( self, port ):
@@ -19,12 +26,49 @@ class Game:
         self.addr = ( self.ip, self.port )
         self.conn = socket.socket()
         self.player = sq.EMPTY
+        self.lock = threading.Lock()
+
+    def send_move( self, move_direction ):
+        protocol = Protocol_client( destination=self.player, direction=int( dirStr[ move_direction ] ), who=self.player )
+        protocol_msg = playerStr[ self.player ] + str( protocol )
+
+        self.lock.acquire()
+        self.conn.send( protocol_msg.encode('utf-8') )
+        self.lock.release()
+
+    def process_input( self, msg ):
+
+        try:
+            dir_idx = strDir[ msg[1] ]
+            who_moved = strPlayer[ msg[2] ]
+
+            end_game = True
+            game_status = self.b.move( who_moved, dir_idx )
+            if( game_status == 1 ):
+                end_game = False
+
+            self.running = not end_game
+        except KeyError:
+            print(msg)
+    def handle_input( self ):
+        while( True ):
+            bytes_received = 0
+            server_msg = ""
+
+            while(bytes_received < 4):
+                tmp_msg = self.conn.recv( 4 )
+                tmp_msg = tmp_msg.decode('utf-8')
+                bytes_received += len(tmp_msg)
+                server_msg += tmp_msg
+
+            self.process_input( server_msg )
 
     def assign_player( self, msg ):
         self.player = strPlayer[ msg[0] ]
 
     def set_game( self ):
         curses.start_color()
+        curses.curs_set( 0 )
         curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
         curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
         curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_WHITE)
@@ -195,16 +239,44 @@ class Game:
         self.b = Board( N )
 
         self.set_game()
+        screen.keypad( True )
+        screen.nodelay( True )
         self.render( screen )
 
         key_pressed = 0
-        server_input = Protocol_client()
+        thread = threading.Thread(target=self.handle_input)
+        thread.name = "server_io"
+        thread.start()
 
-        while( not server_input.end_game ):
-            acc = 0.0
+        acc = 0.0
+        while( self.running ):
+            t1 = time.time()
+            key_pressed = screen.getch()
+
+            if( key_pressed == -1 ):
+                pass
+            elif(key_pressed == curses.KEY_UP):
+                screen.addch(1, 0, '^')
+                self.send_move( dir.UP )
+            elif(key_pressed == curses.KEY_RIGHT):
+                screen.addch(1, 0, '>')
+                self.send_move( dir.RIGHT )
+            elif(key_pressed == curses.KEY_LEFT):
+                screen.addch(1, 0, '<')
+                self.send_move( dir.LEFT )
+            elif(key_pressed == curses.KEY_DOWN):
+                screen.addch(1, 0, 'v')
+                self.send_move( dir.DOWN )
+
+            dt = time.time() - t1
+            acc += dt
+
+            if( acc >= 1/FPS ):
+                self.render( screen )
+                acc = 0.0
 
     def render( self, screen ):
-        curses.curs_set( 0 )
+        t1 = time.time()
         screen.clear()
 
         sh, sw = screen.getmaxyx()
@@ -228,11 +300,9 @@ class Game:
 
             x = x_start
             y += 1
-
+        dt = time.time() - t1
+        screen.addstr(0, 0, str(dt))
         screen.refresh()
-
-    def update_screen( self, screen ):
-        pass
 
     def run( self ):
         self.menu()

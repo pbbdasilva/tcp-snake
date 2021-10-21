@@ -1,3 +1,4 @@
+from math import remainder
 import time
 from board import Board
 import threading
@@ -10,7 +11,7 @@ N = 20
 strDir = { '0' : dir.RIGHT, '1' : dir.UP, '2' : dir.LEFT, '3' : dir.DOWN }
 dirStr = { dir.RIGHT : '0', dir.UP : '1', dir.LEFT : '2', dir.DOWN : '3' }
 
-strPlayer = {'1' : sq.P1, '2' : sq.P2 }
+strPlayer = { '1' : sq.P1, '2' : sq.P2 }
 playerStr = { sq.P1 : '1', sq.P2 : '2' }
 
 class Game:
@@ -49,10 +50,12 @@ class Game:
         self.assign_players()
         self.lock.release()
 
+        remainder_msg = ""
         while( True ):
             print("[LISTENING] waiting on user moves...")
-            bytes_received = 0
-            client_msg = ""
+            bytes_received = len( remainder_msg )
+            client_msg = remainder_msg
+            remainder_msg = ""
 
             while(bytes_received < 4):
                 tmp_msg, player_addr = conn.recvfrom( 4 )
@@ -60,10 +63,14 @@ class Game:
                 bytes_received += len(tmp_msg)
                 client_msg += tmp_msg
 
+            if(len(client_msg) > 4):
+                remainder_msg = client_msg[4:]
+                client_msg = client_msg[:4]
+
             print(client_msg)
             self.lock.acquire()
 
-            destination, dir_idx, player, end_game = self.process_input( client_msg )
+            destination, dir_idx, player, end_game = self.process_input( client_msg ) # '1010'
             server_msg = self.build_message( destination, dir_idx, player, end_game )
 
             for player_number in range(0, len(self.connections)):
@@ -87,11 +94,11 @@ class Game:
         who_moved = strPlayer[ msg[2] ]
 
         end_game = True
-        game_status = self.board.move( who_moved, dir_idx )
+        game_status = self.board.move( player=who_moved, nxt_direction=dir_idx )
         if( game_status == 1 ):
             end_game = False
 
-        return ( destination, dir_idx, who_moved, end_game )
+        return ( destination, int( dirStr[ dir_idx ] ), who_moved, end_game )
 
     def run( self ):
         print("[WAITING] Waiting for connections...")

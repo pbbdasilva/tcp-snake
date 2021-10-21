@@ -20,10 +20,10 @@ class Protocol_client:
     def __str__( self ):
         protocol_msg = str( self.direction )
 
+        protocol_msg += playerStr[ self.who ]
+
         if(self.end_game): protocol_msg += '1'
         else: protocol_msg += '0'
-
-        protocol_msg += playerStr[ self.who ]
 
         return protocol_msg
 
