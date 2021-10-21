@@ -29,9 +29,11 @@ class Game:
         self.lock = threading.Lock()
 
     def send_move( self, move_direction ):
-        protocol = Protocol_client( direction=int( dirStr[ move_direction ] ), who=self.player )
+        protocol = Protocol_client( destination=self.player, direction=int( dirStr[ move_direction ] ), who=self.player )
+        protocol_msg = playerStr[ self.player ] + str( protocol )
+
         self.lock.acquire()
-        self.conn.send( str( protocol ).encode('utf-8') )
+        self.conn.send( protocol_msg.encode('utf-8') )
         self.lock.release()
 
     def process_input( self, msg ):
@@ -269,7 +271,7 @@ class Game:
             dt = time.time() - t1
             acc += dt
 
-            if( acc >= 3 ):
+            if( acc >= 1/FPS ):
                 self.render( screen )
                 acc = 0.0
 
