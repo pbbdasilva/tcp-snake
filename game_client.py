@@ -284,22 +284,21 @@ class Game:
     def fire_column( self, screen ):
         screen  = curses.initscr()
         width   = screen.getmaxyx()[1]
-        height  = screen.getmaxyx()[0]
+        height  = screen.getmaxyx()[0] // 2
         size    = width*height
         char    = [" ", ".", ":", "^", "*", "x", "s", "S", "#", "$"]
-        b       = []
 
         frontal_fire = []
-        left_fire = []
-        right_fire = []
 
-        # curses.curs_set(0)
-        # curses.start_color()
+        win_text = "Vitoria!!"
+
         curses.init_pair(5, 0, 0)       # cor da "sombrinha"
         curses.init_pair(6, curses.COLOR_RED, 0)       # cor do fogo mais externo
         curses.init_pair(7, curses.COLOR_YELLOW, 0)       # cor do fogo intermediario
         curses.init_pair(8, curses.COLOR_BLUE, 0)       # cor do fogo mais interno
+
         screen.clear()
+        
         for i in range(size+width+1): frontal_fire.append(0)
 
         while True:
@@ -308,15 +307,26 @@ class Game:
                 frontal_fire[i]=int((frontal_fire[i]+frontal_fire[i+1]+frontal_fire[i+width]+frontal_fire[i+width+1])/4)
                 color=(4 if frontal_fire[i]>15 else (3 if frontal_fire[i]>9 else (2 if frontal_fire[i]>4 else 1)))
                 if(i<size-1):   
-                    screen.addstr(  int(i/width),           # top fire
+                    screen.addstr(  int(height - i/width),           # top fire
                                     i%width,
                                     char[(9 if frontal_fire[i]>9 else frontal_fire[i])],
                                     curses.color_pair( color + 4 ) | curses.A_BOLD )
-            ''''           screen.addstr(  int(i/width),           # bottom fire
+
+                    screen.addstr(  height,
+                                    (width // 2) - (len(win_text) // 2),
+                                    win_text,
+                                    curses.color_pair( 1 ) )
+
+                    textpad.rectangle(  screen, height - 3,
+                                        ( width // 2 ) - len(win_text) - 1, 
+                                        height + 3, 
+                                        ( width // 2 ) + len(win_text) + 1 )
+
+                    screen.addstr(  height + int(i/width),           # bottom fire
                                     i%width,
                                     char[(9 if frontal_fire[i]>9 else frontal_fire[i])],
-                                    curses.color_pair( color + 4 ) | curses.A_BOLD ) 
-            '''
+                                    curses.color_pair( color + 4 ) | curses.A_BOLD )
+            
 
             screen.refresh()
             screen.timeout(30)
@@ -326,7 +336,7 @@ class Game:
     def winner_window( self, screen ):
         self.set_game()
         screen.clear()
-        screen.addstr(20, 20, "victory!!! :)")
+        # screen.addstr(20, 20, "victory!!! :)")
         screen.refresh()
 
         self.fire_column( screen )
