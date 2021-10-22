@@ -4,6 +4,7 @@ import socket
 import threading
 import time
 import sys
+import random
 from board import Board
 from client_protocol import Protocol_client
 from enums import Squares as sq
@@ -78,7 +79,7 @@ class Game:
         curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
         curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
         curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_WHITE)
-        curses.init_pair(4,curses.COLOR_GREEN,curses.COLOR_BLACK)
+        curses.init_pair(4, curses.COLOR_GREEN, curses.COLOR_BLACK)
 
     def menu_window( self, screen ):
         self.set_game()
@@ -279,12 +280,58 @@ class Game:
 
         return 5
 
+
+    def fire_column( self, screen ):
+        screen  = curses.initscr()
+        width   = screen.getmaxyx()[1]
+        height  = screen.getmaxyx()[0]
+        size    = width*height
+        char    = [" ", ".", ":", "^", "*", "x", "s", "S", "#", "$"]
+        b       = []
+
+        frontal_fire = []
+        left_fire = []
+        right_fire = []
+
+        # curses.curs_set(0)
+        # curses.start_color()
+        curses.init_pair(5, 0, 0)       # cor da "sombrinha"
+        curses.init_pair(6, curses.COLOR_RED, 0)       # cor do fogo mais externo
+        curses.init_pair(7, curses.COLOR_YELLOW, 0)       # cor do fogo intermediario
+        curses.init_pair(8, curses.COLOR_BLUE, 0)       # cor do fogo mais interno
+        screen.clear()
+        for i in range(size+width+1): frontal_fire.append(0)
+
+        while True:
+            for i in range(int(width/9)): frontal_fire[int((random.random()*width)+width*(height-1))]=65
+            for i in range(size):
+                frontal_fire[i]=int((frontal_fire[i]+frontal_fire[i+1]+frontal_fire[i+width]+frontal_fire[i+width+1])/4)
+                color=(4 if frontal_fire[i]>15 else (3 if frontal_fire[i]>9 else (2 if frontal_fire[i]>4 else 1)))
+                if(i<size-1):   
+                    screen.addstr(  int(i/width),           # top fire
+                                    i%width,
+                                    char[(9 if frontal_fire[i]>9 else frontal_fire[i])],
+                                    curses.color_pair( color + 4 ) | curses.A_BOLD )
+            ''''           screen.addstr(  int(i/width),           # bottom fire
+                                    i%width,
+                                    char[(9 if frontal_fire[i]>9 else frontal_fire[i])],
+                                    curses.color_pair( color + 4 ) | curses.A_BOLD ) 
+            '''
+
+            screen.refresh()
+            screen.timeout(30)
+            if (screen.getch()!=-1): break
+        
+
     def winner_window( self, screen ):
         self.set_game()
         screen.clear()
         screen.addstr(20, 20, "victory!!! :)")
         screen.refresh()
-        curses.napms( 2000 )
+
+        self.fire_column( screen )
+        # print "Pressione qualquer tecla para finalizar"
+        k = screen.getch()
 
         return 0
 
@@ -293,7 +340,6 @@ class Game:
         screen.clear()
         screen.addstr(20, 20, "lost ;(")
         screen.refresh()
-        curses.napms( 2000 )
 
         return 0
 
