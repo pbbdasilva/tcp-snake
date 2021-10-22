@@ -294,6 +294,7 @@ class Game:
         return 0
 
     def loser_window( self, screen ):
+        self.back_music.play(2)
         self.set_game()
         screen.clear()
         screen.addstr(20, 20, "lost ;(")

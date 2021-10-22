@@ -7,10 +7,11 @@ CURR_DIR = os.path.abspath(os.path.dirname( __file__ ) )
 PARENT_DIR = os.path.abspath( os.path.join(CURR_DIR, "..") )
 MENU_SONG = os.path.join(PARENT_DIR, "audio/whatsyourask.mp3")
 GAME_SONG = os.path.join(PARENT_DIR, "audio/oneor0.mp3")
+LOSER_SONG = os.path.join(PARENT_DIR, "sadness_and_sorrow.mp3")
 
 class Background_music:
     def __init__( self ):
-        self.curr_song = [ MENU_SONG, GAME_SONG ]
+        self.curr_song = [ MENU_SONG, GAME_SONG, LOSER_SONG ]
         self.song = vlc.MediaListPlayer()
         self.song.set_playback_mode( vlc.PlaybackMode.loop )
         self.player = vlc.Instance()
