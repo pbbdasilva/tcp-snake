@@ -5,6 +5,7 @@ import threading
 import time
 import sys
 from board import Board
+from audio_system import Background_music
 from client_protocol import Protocol_client
 from enums import Squares as sq
 from enums import Directions as dir
@@ -23,7 +24,7 @@ playerStr = { sq.P1 : '1', sq.P2 : '2' }
 class Game:
     def __init__( self, port ):
         self.running = True
-        self.winner = sq.EMPTY
+        self.loser = sq.EMPTY
 
         self.ip = socket.gethostbyname( socket.gethostname() )
         self.port = port
@@ -35,6 +36,7 @@ class Game:
 
         self.screen_idx = 0
         self.screens = [ self.menu, self.waiting, self.settings, self.quit, self.start, self.end ]
+        self.back_music = Background_music()
 
     def send_move( self, move_direction ):
         protocol = Protocol_client( destination=self.player, direction=int( dirStr[ move_direction ] ), who=self.player )
@@ -54,7 +56,7 @@ class Game:
             end_game = False
 
         self.running = not end_game
-        if( end_game ): self.winner = who_moved
+        if( end_game ): self.loser = who_moved
 
     def handle_input( self ):
         while( self.running ):
@@ -82,6 +84,8 @@ class Game:
 
     def menu_window( self, screen ):
         self.set_game()
+        self.back_music.play(0)
+
         screen.nodelay( False )
 
         k = 0
@@ -358,10 +362,10 @@ class Game:
 
     def end( self ):
         self.conn.close()
-        if( self.winner == self.player ):
-            return curses.wrapper( self.winner_window )
-        else:
+        if( self.loser == self.player ):
             return curses.wrapper( self.loser_window )
+        else:
+            return curses.wrapper( self.winner_window )
 
     def quit( self ):
         curses.wrapper( self.quit_window )
