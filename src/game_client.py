@@ -203,6 +203,7 @@ class Game:
         return int( index ) + 1
 
     def waiting_window( self, screen ):
+        self.back_music.play(1)
         self.conn.connect( self.addr )
 
         screen.nodelay( True )
