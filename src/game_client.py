@@ -4,6 +4,7 @@ import socket
 import threading
 import time
 import sys
+import random
 from board import Board
 from audio_system import Background_music
 from client_protocol import Protocol_client
