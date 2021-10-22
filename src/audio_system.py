@@ -5,7 +5,7 @@ import time
 
 CURR_DIR = os.path.abspath(os.path.dirname( __file__ ) )
 PARENT_DIR = os.path.abspath( os.path.join(CURR_DIR, "..") )
-MENU_SONG = os.path.join(PARENT_DIR, "audio/hello.mp3")
+MENU_SONG = os.path.join(PARENT_DIR, "audio/whatsyourask.mp3")
 GAME_SONG = os.path.join(PARENT_DIR, "audio/oneor0.mp3")
 
 class Background_music:
