@@ -1,7 +1,9 @@
 from game_client import Game
 
+PORT = 5050
+
 def main():
-    g = Game(5050)
+    g = Game( PORT )
     g.run()
 
 if __name__ == '__main__':
