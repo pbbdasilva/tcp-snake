@@ -15,6 +15,8 @@ class Board:
         self.dy = [ +1, 0, -1,  0 ]
         self.dx = [ 0, -1,  0, +1 ]
 
+        self.curr_dir = dir.UP
+
     def init_board( self ):
         board = [ [ sq.EMPTY for i in range( self.size ) ] for j in range( self.size ) ]
         board[ math.floor( self.size/2 ) ][ math.floor( self.size/4 ) ] = sq.P1
@@ -22,19 +24,28 @@ class Board:
 
         return board
 
+    def set_direction( self, new_dir):
+        self.curr_dir = new_dir
+
+    def get_direction( self ):
+        return self.curr_dir
+
+    def make_move( self ):
+        self.move( self.curr_dir )
+
     def move( self, player, nxt_direction ):
         curr_x = self.players[ player ].x
         curr_y = self.players[ player ].y
 
         next_x = curr_x + self.dx[ self.directions[ nxt_direction ] ]
         next_y = curr_y + self.dy[ self.directions[ nxt_direction ] ]
-        
+
         next_x = max(next_x, 0)
         next_x = min(next_x, self.size - 1)
-    
+
         next_y = max(next_y, 0)
         next_y = min(next_y, self.size - 1)
-        
+
         if ( self.board[ next_x ][ next_y ] != sq.EMPTY ):
             return 0
 
@@ -47,7 +58,7 @@ class Board:
         for line in self.board:
             for element in line:
                 print(element.value,end = ' ')
-                
+
             print('\n')
         print('end')
 

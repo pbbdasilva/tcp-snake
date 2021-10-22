@@ -38,8 +38,11 @@ class Game:
         self.screens = [ self.menu, self.waiting, self.settings, self.quit, self.start, self.end ]
         self.back_music = Background_music()
 
-    def send_move( self, move_direction ):
-        protocol = Protocol_client( destination=self.player, direction=int( dirStr[ move_direction ] ), who=self.player )
+    def update_direction( self, new_direction ):
+        self.b.set_direction( new_direction )
+
+    def send_move( self ):
+        protocol = Protocol_client( destination=self.player, direction=int( dirStr[ self.b.get_direction() ] ), who=self.player )
         protocol_msg = playerStr[ self.player ] + str( protocol )
 
         self.lock.acquire()
@@ -264,21 +267,22 @@ class Game:
                 pass
             elif(key_pressed == curses.KEY_UP):
                 screen.addch(1, 0, '^')
-                self.send_move( dir.UP )
+                self.update_direction( dir.UP )
             elif(key_pressed == curses.KEY_RIGHT):
                 screen.addch(1, 0, '>')
-                self.send_move( dir.RIGHT )
+                self.update_direction( dir.RIGHT )
             elif(key_pressed == curses.KEY_LEFT):
                 screen.addch(1, 0, '<')
-                self.send_move( dir.LEFT )
+                self.update_direction( dir.LEFT )
             elif(key_pressed == curses.KEY_DOWN):
                 screen.addch(1, 0, 'v')
-                self.send_move( dir.DOWN )
+                self.update_direction( dir.DOWN )
 
             dt = time.time() - t1
             acc += dt
 
-            if( acc >= 1/FPS ):
+            if( acc >= 0.05 ):
+                self.send_move()
                 self.render( screen )
                 acc = 0.0
 
