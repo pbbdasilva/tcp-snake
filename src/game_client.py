@@ -281,7 +281,7 @@ class Game:
             dt = time.time() - t1
             acc += dt
 
-            if( acc >= 0.05 ):
+            if( acc >= 1 ):
                 self.send_move()
                 self.render( screen )
                 acc = 0.0
@@ -324,7 +324,7 @@ class Game:
 
     def render( self, screen ):
         t1 = time.time()
-        screen.clear()
+        screen.erase()
 
         sh, sw = screen.getmaxyx()
         box = [ [ 3, 3 ], [ sh - 3, sw - 3 ] ]
