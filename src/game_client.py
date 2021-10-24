@@ -93,8 +93,6 @@ class Game:
         k = 0
         height, width = screen.getmaxyx()
 
-        start_y_first_button = int(height // 12)
-
         cursor_x = (width // 2) - ( 1 - (width % 2) )
         cursor_y = 0
 
@@ -157,6 +155,8 @@ class Game:
 
             start_x_button = int((width // 2) - (max_len_of_button // 2) - (max_len_of_button % 2)) - 2
 
+            start_y_first_button = start_y + 3
+
             # Rndering some text
             whstr = "Width: {}, Height: {}".format(width, height)
             screen.addstr(0, 0, whstr, curses.color_pair(1))
@@ -182,13 +182,13 @@ class Game:
             screen.addstr(start_y + 1, start_x_subtitle, subtitle)
 
             for i in range( len(button) ):
-                textpad.rectangle(screen, start_y_first_button + 5 + (i*5), start_x_button ,
-                start_y_first_button + 5 + (i*5) + 3, start_x_button + button_size )
+                textpad.rectangle(screen, start_y_first_button + (i*5), start_x_button ,
+                start_y_first_button + (i*5) + 3, start_x_button + button_size )
 
                 if choicebutton[i] == "X":
                     screen.attron(curses.color_pair(3))
-                screen.addstr( start_y_first_button + 5 + (i*5) + 1, start_x_text[i], button[i] )
-                screen.addstr( start_y_first_button + 5 + (i*5) + 2, (width // 2) - ( 1 - (width % 2) ) - 1,
+                screen.addstr( start_y_first_button + (i*5) + 1, start_x_text[i], button[i] )
+                screen.addstr( start_y_first_button + (i*5) + 2, (width // 2) - ( 1 - (width % 2) ) - 1,
                              ( "[" + choicebutton[i] + "]") )
                 if choicebutton[i] == "X":
                     screen.attroff(curses.color_pair(3))
