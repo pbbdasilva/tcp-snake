@@ -5,6 +5,7 @@ import threading
 import time
 import sys
 import random
+import fonts
 from board import Board
 from audio_system import Background_music
 from client_protocol import Protocol_client
@@ -288,13 +289,18 @@ class Game:
     def fire_column( self, screen ):
         screen  = curses.initscr()
         width   = screen.getmaxyx()[1]
-        height  = screen.getmaxyx()[0] // 2
-        size    = width*height
+        half_height  = screen.getmaxyx()[0] // 2
+        size    = width * half_height
         char    = [" ", ".", ":", "^", "*", "x", "s", "S", "#", "$"]
 
         frontal_fire = []
 
-        win_text = "Vitoria!!"
+        if ( width >= len( fonts.victory_text_big[0] ) ):
+            victory_text = fonts.victory_text_big
+            print("VEIO NO BIG")
+        else:
+            victory_text = fonts.victory_text_small
+            print("VEIO NO SMALL")
 
         curses.init_pair(5, 0, 0)       # cor da "sombrinha"
         curses.init_pair(6, curses.COLOR_RED, 0)       # cor do fogo mais externo
@@ -306,32 +312,41 @@ class Game:
         for i in range(size+width+1): frontal_fire.append(0)
 
         while True:
-            for i in range(int(width/9)): frontal_fire[int((random.random()*width)+width*(height-1))]=65
+            for i in range(int(width/9)): frontal_fire[int((random.random()*width)+width*(half_height-1))]=65
             for i in range(size):
                 frontal_fire[i]=int((frontal_fire[i]+frontal_fire[i+1]+frontal_fire[i+width]+frontal_fire[i+width+1])/4)
                 color=(4 if frontal_fire[i]>15 else (3 if frontal_fire[i]>9 else (2 if frontal_fire[i]>4 else 1)))
                 if(i<size-1):   
-                    screen.addstr(  int(height - i/width),           # top fire
+                    screen.addstr(  int(half_height - i/width),           # top fire
                                     i%width,
                                     char[(9 if frontal_fire[i]>9 else frontal_fire[i])],
                                     curses.color_pair( color + 4 ) | curses.A_BOLD )
 
-                    screen.addstr(  height,
-                                    (width // 2) - (len(win_text) // 2),
-                                    win_text,
-                                    curses.color_pair( 1 ) )
-
-                    textpad.rectangle(  screen, height - 3,
-                                        ( width // 2 ) - len(win_text) - 1, 
-                                        height + 3, 
-                                        ( width // 2 ) + len(win_text) + 1 )
-
-                    screen.addstr(  height + int(i/width),           # bottom fire
+                #    screen.addstr(  half_height,
+                #                    (width // 2) - (len(victory_text) // 2),
+                #                    victory_text,
+                #                    curses.color_pair( 1 ) )
+                    
+                #   textpad.rectangle(  screen, half_height - 3,
+                #                    ( width // 2 ) - len(victory_text) - 1, 
+                #                        half_height + 3, 
+                #                        ( width // 2 ) + len(victory_text) + 1 )
+                    
+                    screen.addstr(  half_height + int(i/width),           # bottom fire
                                     i%width,
                                     char[(9 if frontal_fire[i]>9 else frontal_fire[i])],
                                     curses.color_pair( color + 4 ) | curses.A_BOLD )
             
-
+            for i in range(len( victory_text )):
+                print("i = ", i, "- victory_text[i] = ", victory_text[i])
+                try:
+                    screen.addstr(  half_height - ( len( victory_text ) // 2 ) + i,
+                                    (width // 2) - (len(victory_text[i]) // 2),
+                                    victory_text[i],
+                                    curses.color_pair( 1 )  )
+                except curses.error:
+                    pass
+            
             screen.refresh()
             screen.timeout(30)
             if (screen.getch()!=-1): break
@@ -348,11 +363,100 @@ class Game:
 
         return 0
 
+    def snowing( self ):
+
+        snowflakes = {
+            '*': 1,
+            '+': 0.8,
+            '.': 0.4,
+        }
+
+        def max_dimensions(window):
+            height, width = window.getmaxyx()
+            return height - 2, width - 1
+
+        def snowflake_char(window):
+            width = max_dimensions(window)[1]
+            char = random.choice(list(snowflakes.keys()))
+            position = random.randrange(1, width)
+            return (0, position, char)
+
+        def update_snowflakes(prev, window):
+            new = {}
+            for (height, position), char in prev.items():
+                max_height = max_dimensions(window)[0]
+                new_height = height
+                if random.random() <= snowflakes[char]:
+                    new_height += 1
+                    if new_height > max_height or prev.get((new_height, position)):
+                        new_height -= 1
+                new[(new_height, position)] = char
+            return new
+
+        def redisplay(snowflakes, window):
+            for (height, position), char in snowflakes.items():
+                max_height, max_width = max_dimensions(window)
+                if height > max_height or position >= max_width:
+                    continue
+                window.addch(height, position, char)
+
+        def draw_moon(window):
+            moon = [
+                '  **   ',
+                '   *** ',
+                '    ***',
+                '    ***',
+                '   *** ',
+                '  **   ',
+            ]
+            start_position = max_dimensions(window)[1] - 10
+            window.attrset(curses.color_pair(1))
+            for height, line in enumerate(moon, start=1):
+                for position, sym in enumerate(line, start=start_position):
+                    window.addch(height, position, sym)
+            window.attrset(curses.color_pair(0))
+
+        def snowing_main(window, speed):
+            if curses.can_change_color():
+                curses.init_color(curses.COLOR_BLACK, 0,0,0)
+                curses.init_color(curses.COLOR_WHITE, 1000, 1000, 1000)
+                curses.init_color(curses.COLOR_YELLOW, 1000, 1000, 0)
+            curses.init_pair(1, curses.COLOR_YELLOW, 0)
+            try:
+                curses.curs_set(0)
+            except Exception:
+                pass  # Can't hide cursor in 2019 huh?
+            snowflakes = {}
+            while True:
+                height, width = max_dimensions(window)
+                if len(snowflakes.keys()) >= 0.95 * (height * width):
+                    snowflakes.clear()
+                snowflakes = update_snowflakes(snowflakes, window)
+                snowflake = snowflake_char(window)
+                snowflakes[(snowflake[0], snowflake[1])] = snowflake[2]
+                window.clear()
+                redisplay(snowflakes, window)
+                draw_moon(window)
+                window.refresh()
+                window.timeout(30)
+                if (window.getch()!=-1): break
+                try:
+                    time.sleep((0.2) / (speed / 100))
+                except ZeroDivisionError:
+                    time.sleep(0.2)
+
+        speed = 200
+        curses.wrapper(snowing_main, speed)
+
+
     def loser_window( self, screen ):
         self.set_game()
         screen.clear()
         screen.addstr(20, 20, "lost ;(")
         screen.refresh()
+
+        self.snowing()
+
         screen.getch()
         # curses.napms( 2000 )
 
