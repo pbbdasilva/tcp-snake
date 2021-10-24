@@ -17,6 +17,7 @@ playerStr = { sq.P1 : '1', sq.P2 : '2' }
 class Game:
     def __init__( self, n_players ):
         self.board = Board( N )
+        self.running = True
 
         self.lock = threading.Lock()
 
@@ -79,7 +80,9 @@ class Game:
 
             self.lock.release()
 
-            if(end_game): return 0
+            if(end_game): break
+
+        return 0
 
     def build_message( self, destination, dir_idx, player, end_game ):
         protocol = Protocol_client( destination=destination, direction=dir_idx, end_game=end_game, who=player )
@@ -98,16 +101,22 @@ class Game:
         if( game_status == 1 ):
             end_game = False
 
+        self.running = not end_game
         return ( destination, int( dirStr[ dir_idx ] ), who_moved, end_game )
 
     def run( self ):
         print("[WAITING] Waiting for connections...")
         self.server.listen()
-
-        while( True ):
+        thread_list = []
+        while( self.running ):
             conn, addr = self.server.accept()
             thread = threading.Thread( target=self.handle_player, args=( conn, addr ) )
+            thread_list.append( thread )
             self.n_connections += 1
-            self.connections.append(conn)
             thread.name = "player" + str(self.n_connections)
+            self.connections.append(conn)
             thread.start()
+
+        for t in thread_list:
+            t.join()
+        print("[GAME OVER] stop being stupid...")

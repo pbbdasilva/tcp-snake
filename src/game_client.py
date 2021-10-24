@@ -10,7 +10,7 @@ from client_protocol import Protocol_client
 from enums import Squares as sq
 from enums import Directions as dir
 
-N = 20
+N = 10
 FPS = 60.0
 N_BUTTONS = 3
 PROTOCOL_SIZE = 4
@@ -281,7 +281,7 @@ class Game:
             dt = time.time() - t1
             acc += dt
 
-            if( acc >= 1 ):
+            if( acc >= 10/60 ):
                 self.send_move()
                 self.render( screen )
                 acc = 0.0
