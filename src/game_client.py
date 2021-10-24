@@ -286,6 +286,32 @@ class Game:
 
         return 5
 
+    def write_win_lose_text( self, screen , winOrLose):
+        
+        width   = screen.getmaxyx()[1]
+        half_height  = screen.getmaxyx()[0] // 2
+        
+        if ( winOrLose == 0 ):
+            if ( width >= len( fonts.victory_text_big[0] ) ):
+                text = fonts.victory_text_big
+                print("VEIO NO BIG")
+            else:
+                text = fonts.victory_text_small
+                print("VEIO NO SMALL")
+        else:
+            text = fonts.defeat_text
+            print("VEIO NO DEFEAT")
+
+        for i in range(len( text )):
+            print("i = ", i, "- text[i] = ", text[i])
+            try:
+                screen.addstr(  half_height - ( len( text ) // 2 ) + i,
+                                (width // 2) - (len(text[i]) // 2),
+                                text[i],
+                                curses.color_pair( 1 )  )
+            except curses.error:
+                pass
+
     def fire_column( self, screen ):
         screen  = curses.initscr()
         width   = screen.getmaxyx()[1]
@@ -294,13 +320,6 @@ class Game:
         char    = [" ", ".", ":", "^", "*", "x", "s", "S", "#", "$"]
 
         frontal_fire = []
-
-        if ( width >= len( fonts.victory_text_big[0] ) ):
-            victory_text = fonts.victory_text_big
-            print("VEIO NO BIG")
-        else:
-            victory_text = fonts.victory_text_small
-            print("VEIO NO SMALL")
 
         curses.init_pair(5, 0, 0)       # cor da "sombrinha"
         curses.init_pair(6, curses.COLOR_RED, 0)       # cor do fogo mais externo
@@ -337,15 +356,7 @@ class Game:
                                     char[(9 if frontal_fire[i]>9 else frontal_fire[i])],
                                     curses.color_pair( color + 4 ) | curses.A_BOLD )
             
-            for i in range(len( victory_text )):
-                print("i = ", i, "- victory_text[i] = ", victory_text[i])
-                try:
-                    screen.addstr(  half_height - ( len( victory_text ) // 2 ) + i,
-                                    (width // 2) - (len(victory_text[i]) // 2),
-                                    victory_text[i],
-                                    curses.color_pair( 1 )  )
-                except curses.error:
-                    pass
+            self.write_win_lose_text( screen, 0 )
             
             screen.refresh()
             screen.timeout(30)
@@ -437,6 +448,10 @@ class Game:
                 window.clear()
                 redisplay(snowflakes, window)
                 draw_moon(window)
+
+                # Write the "Defeat" text
+                self.write_win_lose_text( window, 1 )
+
                 window.refresh()
                 window.timeout(30)
                 if (window.getch()!=-1): break
