@@ -289,6 +289,7 @@ class Game:
         return 0
 
     def loser_window( self, screen ):
+        self.back_music.play(2)
         display_snow( screen )
         return 0
 
