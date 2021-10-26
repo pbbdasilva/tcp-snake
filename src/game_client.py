@@ -9,7 +9,8 @@ from audio_system import Background_music
 from client_protocol import Protocol_client
 from enums import Squares as sq
 from enums import Directions as dir
-import visual_effects
+from visual_effects.snow_screen import display_snow
+from visual_effects.fire_screen import display_fire
 
 N = 20
 FPS = 60.0
@@ -286,11 +287,11 @@ class Game:
         return 5
 
     def winner_window( self, screen ):
-        visual_effects.fire_screen( screen )
+        display_fire( screen )
         return 0
 
     def loser_window( self, screen ):
-        visual_effects.snow_screen( screen )
+        display_snow( screen )
         return 0
 
     def settings_window( self, screen ):
@@ -368,7 +369,7 @@ class Game:
 
 def main():
     g = Game(5050)
-    g.start()
+    g.end()
 
 if __name__ == '__main__':
     main()

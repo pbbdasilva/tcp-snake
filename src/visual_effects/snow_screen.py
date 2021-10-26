@@ -1,12 +1,13 @@
 import curses
 import random
 import time
-import fonts
-import drawings
+from visual_effects.ascii_fonts import Font
 
 SNOW_SPEED = 200
+SNOWFLAKES = { '*': 1, '+': 0.8, '.': 0.4 }
 
 def display_message( screen ):
+    fonts = Font()
     width   = screen.getmaxyx()[1]
     half_height  = screen.getmaxyx()[0] // 2
     text = fonts.defeat_text
@@ -32,20 +33,9 @@ def max_dimensions( screen ):
 
     return height - 2, width - 1
 
-def draw_moon( screen ):
-    moon = drawings.moon
-    start_position = max_dimensions(screen)[1] - 10
-    screen.attrset(curses.color_pair(1))
-
-    for height, line in enumerate(moon, start=1):
-        for position, sym in enumerate(line, start=start_position):
-            screen.addch(height, position, sym)
-
-    screen.attrset(curses.color_pair(0))
-
 def snowflake_char( screen ):
     width = max_dimensions( screen )[1]
-    char = random.choice( list(drawings.snowflakes.keys()) )
+    char = random.choice( list(SNOWFLAKES.keys()) )
     position = random.randrange(1, width)
 
     return (0, position, char)
@@ -56,7 +46,7 @@ def update_snowflakes(prev, screen):
         max_height = max_dimensions(screen)[0]
         new_height = height
 
-        if( random.random() <= drawings.snowflakes[char] ):
+        if( random.random() <= SNOWFLAKES[char] ):
             new_height += 1
             if( new_height > max_height or prev.get((new_height, position)) ):
                 new_height -= 1
@@ -71,7 +61,7 @@ def redisplay(snowflakes, screen):
         if height > max_height or position >= max_width: continue
         screen.addch(height, position, char)
 
-def display_screen( screen ):
+def display_snow( screen ):
     set_colors()
     snowflakes = {}
 
@@ -96,4 +86,4 @@ def display_screen( screen ):
         time.sleep((0.2) / (SNOW_SPEED / 100))
 
 if __name__ == "__main__":
-    curses.wrapper( display_screen )
+    curses.wrapper( display_snow )

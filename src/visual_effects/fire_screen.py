@@ -1,7 +1,8 @@
 import curses
 from random import random
-import drawings
-import fonts
+from visual_effects.ascii_fonts import Font
+
+FIRE_PARTICLES = [" ", ".", ":", "^", "*", "x", "s", "S", "#", "$"]
 
 def set_colors():
     curses.start_color()
@@ -25,6 +26,7 @@ def fire_color( fire_intensity ):
 def display_message( screen ):
     width   = screen.getmaxyx()[1]
     half_height  = screen.getmaxyx()[0] // 2
+    fonts = Font()
     text = fonts.victory_text_small
 
     for i in range(len( text )):
@@ -36,7 +38,7 @@ def display_message( screen ):
         except curses.error:
             pass
 
-def display_screen( screen ):
+def display_fire( screen ):
     set_colors()
     screen.clear()
     width   = screen.getmaxyx()[1]
@@ -54,10 +56,10 @@ def display_screen( screen ):
             color = fire_color( frontal_fire[i] )
 
             if( i < size-1 ):
-                screen.addstr(  int(half_height - i/width), i%width, drawings.fire_particles[ min( 9, frontal_fire[i] ) ],
+                screen.addstr(  int(half_height - i/width), i%width, FIRE_PARTICLES[ min( 9, frontal_fire[i] ) ],
                                 curses.color_pair( color + 4 ) | curses.A_BOLD )
 
-                screen.addstr(  half_height + int(i/width), i%width, drawings.fire_particles[ min( 9, frontal_fire[i] ) ],
+                screen.addstr(  half_height + int(i/width), i%width, FIRE_PARTICLES[ min( 9, frontal_fire[i] ) ],
                                 curses.color_pair( color + 4 ) | curses.A_BOLD )
 
         display_message( screen )
@@ -68,4 +70,4 @@ def display_screen( screen ):
         if( screen.getch() != -1 ): break
 
 if __name__ == "__main__":
-    curses.wrapper( display_screen )
+    curses.wrapper( display_fire )
