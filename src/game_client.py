@@ -369,7 +369,7 @@ class Game:
 
 def main():
     g = Game(5050)
-    g.end()
+    g.start()
 
 if __name__ == '__main__':
     main()
