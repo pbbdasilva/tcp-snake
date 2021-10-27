@@ -1,4 +1,3 @@
-from math import remainder
 import time
 from board import Board
 import threading
@@ -6,9 +5,7 @@ import socket
 from client_protocol import Protocol_client
 from enums import Squares as sq
 from enums import Directions as dir
-
-N = 20
-PROTOCOL_SIZE = 4
+from consts import *
 
 strDir = { '0' : dir.RIGHT, '1' : dir.UP, '2' : dir.LEFT, '3' : dir.DOWN }
 dirStr = { dir.RIGHT : '0', dir.UP : '1', dir.LEFT : '2', dir.DOWN : '3' }
@@ -27,6 +24,7 @@ class Game:
         self.n_connections = 0
         self.connections = []
         self.n_players = n_players
+        self.last_msg = { sq.P1 : '1110', sq.P2 : '2120' }
 
         self.server = socket.socket()
         HOST = socket.gethostbyname( socket.gethostname() )
@@ -42,6 +40,10 @@ class Game:
             self.connections[ player_number ].send( assign_msg.encode('utf-8') )
 
         self.ready = True
+
+    def store_dir( self, msg ):
+        who_moved = strPlayer[ msg[2] ]
+        self.last_msg[ who_moved ] = msg
 
     def handle_player( self, conn, addr ):
         print("[NEW CONNECTION]" + str(addr[0]) + ":" + str(addr[1]) + " connected")
@@ -70,19 +72,15 @@ class Game:
                 remainder_msg = client_msg[PROTOCOL_SIZE:]
                 client_msg = client_msg[:PROTOCOL_SIZE]
 
+            if( client_msg == "****" ): break
             print(client_msg)
             self.lock.acquire()
 
-            destination, dir_idx, player, end_game = self.process_input( client_msg ) # '1010'
-            server_msg = self.build_message( destination, dir_idx, player, end_game )
-
-            for player_number in range(0, len(self.connections)):
-                player_move = str(player_number + 1) + server_msg
-                self.send_move( self.connections[ player_number ], player_move )
+            self.store_dir( client_msg )
 
             self.lock.release()
 
-            if(end_game): break
+            if( not self.running ): break
 
         return 0
 
@@ -106,6 +104,17 @@ class Game:
         self.running = not end_game
         return ( destination, int( dirStr[ dir_idx ] ), who_moved, end_game )
 
+    def simulate( self ):
+        for player in playerStr.keys():
+            if( not self.running ): return 0
+
+            destination, dir_idx, player, end_game = self.process_input( self.last_msg[ player ] )
+            server_msg = self.build_message( destination, dir_idx, player, end_game )
+
+            for player_number in range( 0, len(self.connections) ):
+                player_move = str( player_number + 1 ) + server_msg
+                self.send_move( self.connections[ player_number ], player_move )
+
     def run( self ):
         print("[WAITING] Waiting for connections...")
         self.server.listen()
@@ -119,6 +128,18 @@ class Game:
             self.connections.append(conn)
             thread.start()
 
+        time_frame = 0.0
+        t1 = time.time()
+        while( self.running ):
+            time_frame = time.time() - t1
+
+            if( time_frame >= TIME_STEP ):
+                self.lock.acquire()
+                self.simulate()
+                self.lock.release()
+
+                t1 = time.time()
+
         for t in thread_list:
             t.join()
-        print("[GAME OVER] stop being stupid...")
+        print("[GAME OVER] Turning off server...")

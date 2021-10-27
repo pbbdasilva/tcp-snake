@@ -11,11 +11,7 @@ from enums import Squares as sq
 from enums import Directions as dir
 from visual_effects.snow_screen import display_snow
 from visual_effects.fire_screen import display_fire
-
-N = 20
-FPS = 60.0
-N_BUTTONS = 3
-PROTOCOL_SIZE = 4
+from consts import *
 
 strDir = { '0' : dir.RIGHT, '1' : dir.UP, '2' : dir.LEFT, '3' : dir.DOWN }
 dirStr = { dir.RIGHT : '0', dir.UP : '1', dir.LEFT : '2', dir.DOWN : '3' }
@@ -238,7 +234,7 @@ class Game:
                 screen.addstr( height // 2, start_x_wait + 10, "Jogadores conectados" )
                 screen.addstr( 2*height // 3, start_x_exit + 15, "Prepare-se" )
                 screen.refresh()
-                curses.napms(5000)
+                curses.napms(500)
                 self.assign_player( msg )
                 ready = True
 
@@ -267,21 +263,24 @@ class Game:
             elif(key_pressed == curses.KEY_UP):
                 screen.addch(1, 0, '^')
                 self.update_direction( dir.UP )
+                self.send_move()
             elif(key_pressed == curses.KEY_RIGHT):
                 screen.addch(1, 0, '>')
                 self.update_direction( dir.RIGHT )
+                self.send_move()
             elif(key_pressed == curses.KEY_LEFT):
                 screen.addch(1, 0, '<')
                 self.update_direction( dir.LEFT )
+                self.send_move()
             elif(key_pressed == curses.KEY_DOWN):
                 screen.addch(1, 0, 'v')
                 self.update_direction( dir.DOWN )
+                self.send_move()
 
             dt = time.time() - t1
             acc += dt
 
             if( acc >= 1.0/FPS ):
-                self.send_move()
                 self.render( screen )
                 acc = 0.0
 
@@ -355,8 +354,12 @@ class Game:
     def start( self ):
         return curses.wrapper( self.game_window )
 
-    def end( self ):
+    def disconnect( self ):
+        self.conn.send( b"****" )
         self.conn.close()
+
+    def end( self ):
+        self.disconnect()
         if( self.loser == self.player ):
             return curses.wrapper( self.loser_window )
         else:

@@ -1,9 +1,8 @@
 from game_client import Game
-
-PORT = 5050
+import consts
 
 def main():
-    g = Game( PORT )
+    g = Game( consts.PORT )
     g.run()
 
 if __name__ == '__main__':
