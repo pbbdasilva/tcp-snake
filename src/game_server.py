@@ -8,6 +8,8 @@ from enums import Squares as sq
 from enums import Directions as dir
 
 N = 20
+PROTOCOL_SIZE = 4
+
 strDir = { '0' : dir.RIGHT, '1' : dir.UP, '2' : dir.LEFT, '3' : dir.DOWN }
 dirStr = { dir.RIGHT : '0', dir.UP : '1', dir.LEFT : '2', dir.DOWN : '3' }
 
@@ -58,15 +60,15 @@ class Game:
             client_msg = remainder_msg
             remainder_msg = ""
 
-            while(bytes_received < 4):
-                tmp_msg, player_addr = conn.recvfrom( 4 )
+            while( bytes_received < PROTOCOL_SIZE ):
+                tmp_msg, player_addr = conn.recvfrom( PROTOCOL_SIZE )
                 tmp_msg = tmp_msg.decode('utf-8')
                 bytes_received += len(tmp_msg)
                 client_msg += tmp_msg
 
-            if(len(client_msg) > 4):
-                remainder_msg = client_msg[4:]
-                client_msg = client_msg[:4]
+            if( len(client_msg) > PROTOCOL_SIZE ):
+                remainder_msg = client_msg[PROTOCOL_SIZE:]
+                client_msg = client_msg[:PROTOCOL_SIZE]
 
             print(client_msg)
             self.lock.acquire()
@@ -108,7 +110,7 @@ class Game:
         print("[WAITING] Waiting for connections...")
         self.server.listen()
         thread_list = []
-        while( self.running ):
+        while( self.n_connections < self.n_players ):
             conn, addr = self.server.accept()
             thread = threading.Thread( target=self.handle_player, args=( conn, addr ) )
             thread_list.append( thread )
