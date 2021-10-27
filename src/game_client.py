@@ -11,12 +11,7 @@ from enums import Squares as sq
 from enums import Directions as dir
 from visual_effects.snow_screen import display_snow
 from visual_effects.fire_screen import display_fire
-
-
-N = 20
-FPS = 60.0
-N_BUTTONS = 3
-PROTOCOL_SIZE = 4
+from consts import *
 
 strDir = { '0' : dir.RIGHT, '1' : dir.UP, '2' : dir.LEFT, '3' : dir.DOWN }
 dirStr = { dir.RIGHT : '0', dir.UP : '1', dir.LEFT : '2', dir.DOWN : '3' }
@@ -41,8 +36,11 @@ class Game:
         self.screens = [ self.menu, self.waiting, self.settings, self.quit, self.start, self.end ]
         self.back_music = Background_music()
 
-    def send_move( self, move_direction ):
-        protocol = Protocol_client( destination=self.player, direction=int( dirStr[ move_direction ] ), who=self.player )
+    def update_direction( self, new_direction ):
+        self.b.set_direction( new_direction, who=self.player )
+
+    def send_move( self ):
+        protocol = Protocol_client( destination=self.player, direction=int( dirStr[ self.b.get_direction( who=self.player ) ] ), who=self.player )
         protocol_msg = playerStr[ self.player ] + str( protocol )
 
         self.lock.acquire()
@@ -236,7 +234,7 @@ class Game:
                 screen.addstr( height // 2, start_x_wait + 10, "Jogadores conectados" )
                 screen.addstr( 2*height // 3, start_x_exit + 15, "Prepare-se" )
                 screen.refresh()
-                curses.napms(5000)
+                curses.napms(500)
                 self.assign_player( msg )
                 ready = True
 
@@ -264,21 +262,25 @@ class Game:
                 pass
             elif(key_pressed == curses.KEY_UP):
                 screen.addch(1, 0, '^')
-                self.send_move( dir.UP )
+                self.update_direction( dir.UP )
+                self.send_move()
             elif(key_pressed == curses.KEY_RIGHT):
                 screen.addch(1, 0, '>')
-                self.send_move( dir.RIGHT )
+                self.update_direction( dir.RIGHT )
+                self.send_move()
             elif(key_pressed == curses.KEY_LEFT):
                 screen.addch(1, 0, '<')
-                self.send_move( dir.LEFT )
+                self.update_direction( dir.LEFT )
+                self.send_move()
             elif(key_pressed == curses.KEY_DOWN):
                 screen.addch(1, 0, 'v')
-                self.send_move( dir.DOWN )
+                self.update_direction( dir.DOWN )
+                self.send_move()
 
             dt = time.time() - t1
             acc += dt
 
-            if( acc >= 1/FPS ):
+            if( acc >= 1.0/FPS ):
                 self.render( screen )
                 acc = 0.0
 
@@ -311,7 +313,7 @@ class Game:
 
     def render( self, screen ):
         t1 = time.time()
-        screen.clear()
+        screen.erase()
 
         sh, sw = screen.getmaxyx()
         box = [ [ 3, 3 ], [ sh - 3, sw - 3 ] ]
@@ -352,8 +354,12 @@ class Game:
     def start( self ):
         return curses.wrapper( self.game_window )
 
-    def end( self ):
+    def disconnect( self ):
+        self.conn.send( b"****" )
         self.conn.close()
+
+    def end( self ):
+        self.disconnect()
         if( self.loser == self.player ):
             return curses.wrapper( self.loser_window )
         else:
