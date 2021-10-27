@@ -5,8 +5,8 @@ import math
 
 class Board:
     def __init__( self, size ):
-        self.players = { sq.P1 : Player(sq.P1, math.floor(size/2), math.floor(size/4)),
-                         sq.P2 : Player(sq.P2, math.floor(size/2), math.floor(3*size/4)) }
+        self.players = { sq.P1 : Player(sq.P1, math.floor(size/2), math.floor(size/4),   dir.UP),
+                         sq.P2 : Player(sq.P2, math.floor(size/2), math.floor(3*size/4), dir.UP) }
 
         self.size = size
         self.board = self.init_board()
@@ -24,14 +24,14 @@ class Board:
 
         return board
 
-    def set_direction( self, new_dir):
-        self.curr_dir = new_dir
+    def set_direction( self, new_dir, who):
+        self.players[ who ].set_direction( new_dir )
 
-    def get_direction( self ):
-        return self.curr_dir
+    def get_direction( self, who ):
+        return self.players[ who ].get_direction()
 
-    def make_move( self ):
-        self.move( self.curr_dir )
+    # def make_move( self, who ):
+    #     self.move( self.curr_dir )
 
     def move( self, player, nxt_direction ):
         curr_x = self.players[ player ].x

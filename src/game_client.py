@@ -12,8 +12,7 @@ from enums import Directions as dir
 from visual_effects.snow_screen import display_snow
 from visual_effects.fire_screen import display_fire
 
-
-N = 10
+N = 20
 FPS = 60.0
 N_BUTTONS = 3
 PROTOCOL_SIZE = 4
@@ -42,10 +41,10 @@ class Game:
         self.back_music = Background_music()
 
     def update_direction( self, new_direction ):
-        self.b.set_direction( new_direction )
+        self.b.set_direction( new_direction, who=self.player )
 
     def send_move( self ):
-        protocol = Protocol_client( destination=self.player, direction=int( dirStr[ self.b.get_direction() ] ), who=self.player )
+        protocol = Protocol_client( destination=self.player, direction=int( dirStr[ self.b.get_direction( who=self.player ) ] ), who=self.player )
         protocol_msg = playerStr[ self.player ] + str( protocol )
 
         self.lock.acquire()
@@ -281,7 +280,7 @@ class Game:
             dt = time.time() - t1
             acc += dt
 
-            if( acc >= 10/60 ):
+            if( acc >= 1.0/FPS ):
                 self.send_move()
                 self.render( screen )
                 acc = 0.0
