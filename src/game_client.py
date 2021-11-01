@@ -296,8 +296,133 @@ class Game:
         return 0
 
     def settings_window( self, screen ):
+
+        volume = 5
+
         self.set_game()
+        self.back_music.play(0)
+
+        screen.nodelay( False )
+
+        k = 0
+        height, width = screen.getmaxyx()
+        start_y_first_button = int(height // 12)
+        cursor_x = (width // 2) - ( 1 - (width % 2) )
+        cursor_y = 0
+
+        first_start_y = 9
+
+        while ( k != ord('\n') ):
+            screen.clear()
+
+            if k == curses.KEY_DOWN:
+                cursor_y = cursor_y + 5
+            elif k == curses.KEY_UP:
+                cursor_y = cursor_y - 5
+            elif cursor_y == first_start_y:
+                if k == curses.KEY_LEFT:
+                    volume = volume - 1
+                elif k == curses.KEY_RIGHT:
+                    volume = volume + 1
+
+            volume = max(0, volume)
+            volume = min(10, volume)
+
+            cursor_y = max(first_start_y, cursor_y)
+            cursor_y = min(first_start_y + ( ( N_CONFIG - 1 ) * 5 ), cursor_y)
+
+            choicebutton = []
+
+            for i in range(N_CONFIG):
+                if ( i == ( ( cursor_y - first_start_y ) / 5 ) ):
+                    choicebutton.append("X")
+                else:
+                    choicebutton.append(" ")
+
+
+            # Declaration of strings
+            title = "[TRON]"[:width-1]
+            subtitle = "Configuracoes do Usuario"[:width-1]
+            statusbarstr = "Press 'q' to exit | STATUS BAR | Pos: {}, {}".format(cursor_x, cursor_y)
+
+            button = []
+            button.append( "Ajustar volume do audio: " + str(volume) + "."[:width-1] )
+            button.append( "Outro Butao"[:width-1] )
+            button.append( "Retornar ao Menu"[:width-1] )
+
+
+            # Getting the max len between all buttons
+            max_len_of_button = 0
+            for butt in button:
+                max_len_of_button = max ( max_len_of_button, len(butt) )
+
+            for i in range( len(button) ):
+                spacestr = ( (max_len_of_button - len(button[i]) + 1) // 2 ) * " "
+                button_size = 3 + 2*len( spacestr ) + len( button[i] )
+
+
+            # Centering calculations
+            start_x_title = int((width // 2) - (len(title) // 2) - len(title) % 2)
+            start_x_subtitle = int((width // 2) - (len(subtitle) // 2) - len(subtitle) % 2)
+
+            start_y = int((height // 5) - 2)
+
+            start_x_text = []
+
+            for i in range(N_CONFIG):
+                start_x_text.append( int((width // 2) - (len(button[i]) // 2) - (len(button[i]) % 2)) )
+
+            start_x_button = int((width // 2) - (max_len_of_button // 2) - (max_len_of_button % 2)) - 2
+
+            start_y_first_button = start_y + 3
+            whstr = "Width: {}, Height: {}".format(width, height)
+            screen.addstr(0, 0, whstr, curses.color_pair(1))
+
+            # Render status bar
+            screen.attron(curses.color_pair(3))
+            screen.addstr(height-1, 0, statusbarstr)
+            screen.addstr(height-1, len(statusbarstr), " " * (width - len(statusbarstr) - 1))
+            screen.attroff(curses.color_pair(3))
+
+            # Turning on attributes for title
+            screen.attron(curses.color_pair(2))
+            screen.attron(curses.A_BOLD)
+
+            # Rendering title
+            screen.addstr(start_y, start_x_title, title)
+
+            # Turning off attributes for title
+            screen.attroff(curses.color_pair(2))
+            screen.attroff(curses.A_BOLD)
+
+            # Print rest of text
+            screen.addstr(start_y + 1, start_x_subtitle, subtitle)
+
+            for i in range( len(button) ):
+                textpad.rectangle(screen, start_y_first_button + (i*5), start_x_button ,
+                start_y_first_button + (i*5) + 3, start_x_button + button_size )
+
+                if choicebutton[i] == "X":
+                    screen.attron(curses.color_pair(3))
+                screen.addstr( start_y_first_button + (i*5) + 1, start_x_text[i], button[i] )
+                screen.addstr( start_y_first_button + (i*5) + 2, (width // 2) - ( 1 - (width % 2) ) - 1, ( "[" + choicebutton[i] + "]") )
+                if choicebutton[i] == "X":
+                    screen.attroff(curses.color_pair(3))
+
+            screen.move(cursor_y, cursor_x)
+            screen.refresh()
+
+            k = screen.getch()
+
         screen.clear()
+        screen.refresh()
+
+        index = ( cursor_y - first_start_y ) / 5
+        return int( index ) + 1
+
+
+
+
         screen.addstr(20, 20, "In the future you will adjust your settings here...")
         screen.refresh()
         curses.napms( 2000 )
