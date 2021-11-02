@@ -9,6 +9,8 @@ from audio_system import Background_music
 from client_protocol import Protocol_client
 from enums import Squares as sq
 from enums import Directions as dir
+from enums import ChangeVolume as vol
+from enums import PlayerCaracters as pchar
 from visual_effects.snow_screen import display_snow
 from visual_effects.fire_screen import display_fire
 from consts import *
@@ -18,6 +20,9 @@ dirStr = { dir.RIGHT : '0', dir.UP : '1', dir.LEFT : '2', dir.DOWN : '3' }
 
 strPlayer = { '1' : sq.P1, '2' : sq.P2 }
 playerStr = { sq.P1 : '1', sq.P2 : '2' }
+
+intPchar = { 0 : pchar.OP1, 1 : pchar.OP2, 2 : pchar.OP3, 3 : pchar.OP4 }
+pcharInt = { pchar.OP1 : 0, pchar.OP2 : 1, pchar.OP3 : 2, pchar.OP4 : 3 }
 
 class Game:
     def __init__( self, port ):
@@ -35,6 +40,8 @@ class Game:
         self.screen_idx = 0
         self.screens = [ self.menu, self.waiting, self.settings, self.quit, self.start, self.end ]
         self.back_music = Background_music()
+        self.volume = DEFAULT_VOLUME
+        self.pchar = pchar.OP1
 
     def update_direction( self, new_direction ):
         self.b.set_direction( new_direction, who=self.player )
@@ -295,9 +302,23 @@ class Game:
         display_snow( screen )
         return 0
 
-    def settings_window( self, screen ):
+    def change_volume( self, screen, change ):
 
-        volume = 5
+        if change == vol.DECREASE:
+            self.volume = self.volume - 1
+            self.volume = max( MIN_VOLUME, self.volume )
+        elif change == vol.INCREASE:
+            self.volume = self.volume + 1
+            self.volume = min( MAX_VOLUME, self.volume )
+        elif change == vol.MUTE and self.volume >= 0:
+            self.volume = self.volume * ( -1 )
+        elif change == vol.DESMUTE and self.volume <= 0:
+            self.volume = self.volume * ( -1 )
+
+        # Check enums.py class ChangeVolume
+        pass
+
+    def settings_window( self, screen ):
 
         self.set_game()
         self.back_music.play(0)
@@ -321,12 +342,18 @@ class Game:
                 cursor_y = cursor_y - 5
             elif cursor_y == first_start_y:
                 if k == curses.KEY_LEFT:
-                    volume = volume - 1
+                    self.change_volume( screen, vol.DECREASE)
                 elif k == curses.KEY_RIGHT:
-                    volume = volume + 1
+                    self.change_volume( screen, vol.INCREASE)
+            elif cursor_y == first_start_y + 5:
+                if k == curses.KEY_LEFT and pcharInt[ self.pchar ] != 0:
+                    self.pchar = intPchar[ pcharInt[ self.pchar ] - 1 ]
+                elif k == curses.KEY_RIGHT and pcharInt[ self.pchar ] != (CHAR_OPTIONS - 1):
+                    self.pchar = intPchar[ pcharInt[ self.pchar ] + 1 ]
 
-            volume = max(0, volume)
-            volume = min(10, volume)
+                #self.player.value = self.pchar.value
+                # Atualizar valor do sq.P1/P2 do player
+                
 
             cursor_y = max(first_start_y, cursor_y)
             cursor_y = min(first_start_y + ( ( N_CONFIG - 1 ) * 5 ), cursor_y)
@@ -346,8 +373,8 @@ class Game:
             statusbarstr = "Press 'q' to exit | STATUS BAR | Pos: {}, {}".format(cursor_x, cursor_y)
 
             button = []
-            button.append( "Ajustar volume do audio: " + str(volume) + "."[:width-1] )
-            button.append( "Outro Butao"[:width-1] )
+            button.append( "Ajustar volume do audio: " + str(self.volume) + "."[:width-1] )
+            button.append( "Alterar caracter do personagem:"[:width-1] )
             button.append( "Retornar ao Menu"[:width-1] )
 
 
@@ -404,8 +431,39 @@ class Game:
 
                 if choicebutton[i] == "X":
                     screen.attron(curses.color_pair(3))
+
                 screen.addstr( start_y_first_button + (i*5) + 1, start_x_text[i], button[i] )
-                screen.addstr( start_y_first_button + (i*5) + 2, (width // 2) - ( 1 - (width % 2) ) - 1, ( "[" + choicebutton[i] + "]") )
+
+                if i == 0:
+                    volume_bar = "[" + ( "x" * self.volume ) + ( " " * ( MAX_VOLUME - self.volume ) ) + "]"
+                    screen.addstr( start_y_first_button + (i*5) + 2, 
+                                   int((width // 2) - (len(volume_bar) // 2) - (len(volume_bar) % 2)), 
+                                   volume_bar )
+                elif i == 1:
+                    char_choice = ""
+                    for j in range( CHAR_OPTIONS ):
+                        
+                        if self.pchar == intPchar[ j ]:
+                            char_choice = char_choice + "["
+                        else:
+                            char_choice = char_choice + " "
+                        
+                        char_choice = char_choice + intPchar[ j ].value
+                        
+                        if self.pchar == intPchar[ j ]:
+                            char_choice = char_choice + "] "
+                        else:
+                            char_choice = char_choice + "  "
+                        
+                    screen.addstr( start_y_first_button + (i*5) + 2, 
+                                   #int((width // 2) - (len(char_choice) // 2) - (len(char_choice) % 2)) - ( 4 *  ),                                                                     
+                                   int((width // 2) - (len(char_choice) % 2)) - ( 4 * pcharInt[ self.pchar ]) - 2,
+                                   char_choice )
+
+                elif i == 2:
+                    screen.addstr( start_y_first_button + (i*5) + 2, (width // 2) - ( 1 - (width % 2) ) - 1, 
+                                   ( "[" + choicebutton[i] + "]") )
+                
                 if choicebutton[i] == "X":
                     screen.attroff(curses.color_pair(3))
 
@@ -418,15 +476,6 @@ class Game:
         screen.refresh()
 
         index = ( cursor_y - first_start_y ) / 5
-        return int( index ) + 1
-
-
-
-
-        screen.addstr(20, 20, "In the future you will adjust your settings here...")
-        screen.refresh()
-        curses.napms( 2000 )
-
         return 0
 
     def quit_window( self, screen ):
