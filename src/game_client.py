@@ -39,7 +39,7 @@ class Game:
 
         self.screen_idx = 0
         self.screens = [ self.menu, self.waiting, self.settings, self.quit, self.start, self.end ]
-        self.back_music = Background_music()
+        self.back_music = Background_music( DEFAULT_VOLUME )
         self.volume = DEFAULT_VOLUME
         self.pchar = pchar.OP1
 
@@ -302,7 +302,7 @@ class Game:
         display_snow( screen )
         return 0
 
-    def change_volume( self, screen, change ):
+    def change_volume( self, change ):
 
         if change == vol.DECREASE:
             self.volume = self.volume - 1
@@ -315,14 +315,10 @@ class Game:
         elif change == vol.DESMUTE and self.volume <= 0:
             self.volume = self.volume * ( -1 )
 
-        # Check enums.py class ChangeVolume
-        pass
+        self.back_music.set_volume( self.volume )
 
     def settings_window( self, screen ):
-
         self.set_game()
-        self.back_music.play(0)
-
         screen.nodelay( False )
 
         k = 0
@@ -342,18 +338,14 @@ class Game:
                 cursor_y = cursor_y - 5
             elif cursor_y == first_start_y:
                 if k == curses.KEY_LEFT:
-                    self.change_volume( screen, vol.DECREASE)
+                    self.change_volume( vol.DECREASE )
                 elif k == curses.KEY_RIGHT:
-                    self.change_volume( screen, vol.INCREASE)
+                    self.change_volume( vol.INCREASE )
             elif cursor_y == first_start_y + 5:
                 if k == curses.KEY_LEFT and pcharInt[ self.pchar ] != 0:
                     self.pchar = intPchar[ pcharInt[ self.pchar ] - 1 ]
                 elif k == curses.KEY_RIGHT and pcharInt[ self.pchar ] != (CHAR_OPTIONS - 1):
                     self.pchar = intPchar[ pcharInt[ self.pchar ] + 1 ]
-
-                #self.player.value = self.pchar.value
-                # Atualizar valor do sq.P1/P2 do player
-                
 
             cursor_y = max(first_start_y, cursor_y)
             cursor_y = min(first_start_y + ( ( N_CONFIG - 1 ) * 5 ), cursor_y)
@@ -436,34 +428,34 @@ class Game:
 
                 if i == 0:
                     volume_bar = "[" + ( "x" * self.volume ) + ( " " * ( MAX_VOLUME - self.volume ) ) + "]"
-                    screen.addstr( start_y_first_button + (i*5) + 2, 
-                                   int((width // 2) - (len(volume_bar) // 2) - (len(volume_bar) % 2)), 
+                    screen.addstr( start_y_first_button + (i*5) + 2,
+                                   int((width // 2) - (len(volume_bar) // 2) - (len(volume_bar) % 2)),
                                    volume_bar )
                 elif i == 1:
                     char_choice = ""
                     for j in range( CHAR_OPTIONS ):
-                        
+
                         if self.pchar == intPchar[ j ]:
                             char_choice = char_choice + "["
                         else:
                             char_choice = char_choice + " "
-                        
+
                         char_choice = char_choice + intPchar[ j ].value
-                        
+
                         if self.pchar == intPchar[ j ]:
                             char_choice = char_choice + "] "
                         else:
                             char_choice = char_choice + "  "
-                        
-                    screen.addstr( start_y_first_button + (i*5) + 2, 
-                                   #int((width // 2) - (len(char_choice) // 2) - (len(char_choice) % 2)) - ( 4 *  ),                                                                     
+
+                    screen.addstr( start_y_first_button + (i*5) + 2,
+                                   #int((width // 2) - (len(char_choice) // 2) - (len(char_choice) % 2)) - ( 4 *  ),
                                    int((width // 2) - (len(char_choice) % 2)) - ( 4 * pcharInt[ self.pchar ]) - 2,
                                    char_choice )
 
                 elif i == 2:
-                    screen.addstr( start_y_first_button + (i*5) + 2, (width // 2) - ( 1 - (width % 2) ) - 1, 
+                    screen.addstr( start_y_first_button + (i*5) + 2, (width // 2) - ( 1 - (width % 2) ) - 1,
                                    ( "[" + choicebutton[i] + "]") )
-                
+
                 if choicebutton[i] == "X":
                     screen.attroff(curses.color_pair(3))
 
@@ -475,7 +467,6 @@ class Game:
         screen.clear()
         screen.refresh()
 
-        index = ( cursor_y - first_start_y ) / 5
         return 0
 
     def quit_window( self, screen ):
@@ -502,9 +493,9 @@ class Game:
                 if element == sq.EMPTY:
                     screen.addch(y,x,element.value, curses.color_pair(1))
                 elif element == sq.P1:
-                    screen.addch(y,x,element.value, curses.color_pair(2))
+                    screen.addch(y,x,self.pchar.value, curses.color_pair(2))
                 elif element == sq.P2:
-                    screen.addch(y,x,element.value, curses.color_pair(4))
+                    screen.addch(y,x,self.pchar.value, curses.color_pair(4))
 
                 x += 2
 
