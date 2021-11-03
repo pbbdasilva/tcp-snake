@@ -4,6 +4,8 @@ class Squares(Enum):
     EMPTY = '-'
     P1 = '*'
     P2 = '^'
+    TMP_P1 = 'x'
+    TMP_P2 = 'o'
 
 class Directions(Enum):
     RIGHT = 0
