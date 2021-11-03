@@ -8,7 +8,7 @@ Run ```setup.sh``` with sudo privileges.
 
 ## Play
 
-The game requires 2 players(clients) and a server. Hence, you should execute the game as a client 2 times using ```python3 src/client.py``` and once using ```python3 src/server.py```. 
+The game requires 2 players (clients) and a server. Hence, you should execute the game as a client 2 times using ```python3 src/client.py``` and once using ```python3 src/server.py```. 
 
 ## How it works
 
