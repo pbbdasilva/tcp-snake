@@ -1,8 +1,9 @@
 from game_server import Game
 
+N_PLAYERS = 1
+N_AIS = 1
 def main():
-    # g = Game(2)
-    g = Game(1, 1)
+    g = Game(N_PLAYERS, N_AIS)
     g.run()
 
 if __name__ == '__main__':
