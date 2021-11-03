@@ -9,6 +9,8 @@ from audio_system import Background_music
 from client_protocol import Protocol_client
 from enums import Squares as sq
 from enums import Directions as dir
+from enums import ChangeVolume as vol
+from enums import PlayerCaracters as pchar
 from visual_effects.snow_screen import display_snow
 from visual_effects.fire_screen import display_fire
 from consts import *
@@ -18,6 +20,9 @@ dirStr = { dir.RIGHT : '0', dir.UP : '1', dir.LEFT : '2', dir.DOWN : '3' }
 
 strPlayer = { '1' : sq.P1, '2' : sq.P2 }
 playerStr = { sq.P1 : '1', sq.P2 : '2' }
+
+intPchar = { 0 : pchar.OP1, 1 : pchar.OP2, 2 : pchar.OP3, 3 : pchar.OP4 }
+pcharInt = { pchar.OP1 : 0, pchar.OP2 : 1, pchar.OP3 : 2, pchar.OP4 : 3 }
 
 class Game:
     def __init__( self, port ):
@@ -34,7 +39,9 @@ class Game:
 
         self.screen_idx = 0
         self.screens = [ self.menu, self.waiting, self.settings, self.quit, self.start, self.end ]
-        self.back_music = Background_music()
+        self.back_music = Background_music( DEFAULT_VOLUME )
+        self.volume = DEFAULT_VOLUME
+        self.pchar = pchar.OP1
 
     def update_direction( self, new_direction ):
         self.b.set_direction( new_direction, who=self.player )
@@ -295,12 +302,170 @@ class Game:
         display_snow( screen )
         return 0
 
+    def change_volume( self, change ):
+
+        if change == vol.DECREASE:
+            self.volume = self.volume - 1
+            self.volume = max( MIN_VOLUME, self.volume )
+        elif change == vol.INCREASE:
+            self.volume = self.volume + 1
+            self.volume = min( MAX_VOLUME, self.volume )
+        elif change == vol.MUTE and self.volume >= 0:
+            self.volume = self.volume * ( -1 )
+        elif change == vol.DESMUTE and self.volume <= 0:
+            self.volume = self.volume * ( -1 )
+
+        self.back_music.set_volume( self.volume )
+
     def settings_window( self, screen ):
         self.set_game()
+        screen.nodelay( False )
+
+        k = 0
+        height, width = screen.getmaxyx()
+        start_y_first_button = int(height // 12)
+        cursor_x = (width // 2) - ( 1 - (width % 2) )
+        cursor_y = 0
+
+        first_start_y = 9
+
+        while ( k != ord('\n') ):
+            screen.clear()
+
+            if k == curses.KEY_DOWN:
+                cursor_y = cursor_y + 5
+            elif k == curses.KEY_UP:
+                cursor_y = cursor_y - 5
+            elif cursor_y == first_start_y:
+                if k == curses.KEY_LEFT:
+                    self.change_volume( vol.DECREASE )
+                elif k == curses.KEY_RIGHT:
+                    self.change_volume( vol.INCREASE )
+            elif cursor_y == first_start_y + 5:
+                if k == curses.KEY_LEFT and pcharInt[ self.pchar ] != 0:
+                    self.pchar = intPchar[ pcharInt[ self.pchar ] - 1 ]
+                elif k == curses.KEY_RIGHT and pcharInt[ self.pchar ] != (CHAR_OPTIONS - 1):
+                    self.pchar = intPchar[ pcharInt[ self.pchar ] + 1 ]
+
+            cursor_y = max(first_start_y, cursor_y)
+            cursor_y = min(first_start_y + ( ( N_CONFIG - 1 ) * 5 ), cursor_y)
+
+            choicebutton = []
+
+            for i in range(N_CONFIG):
+                if ( i == ( ( cursor_y - first_start_y ) / 5 ) ):
+                    choicebutton.append("X")
+                else:
+                    choicebutton.append(" ")
+
+
+            # Declaration of strings
+            title = "[TRON]"[:width-1]
+            subtitle = "Configuracoes do Usuario"[:width-1]
+            statusbarstr = "Press 'q' to exit | STATUS BAR | Pos: {}, {}".format(cursor_x, cursor_y)
+
+            button = []
+            button.append( "Ajustar volume do audio: " + str(self.volume) + "."[:width-1] )
+            button.append( "Alterar caracter do personagem:"[:width-1] )
+            button.append( "Retornar ao Menu"[:width-1] )
+
+
+            # Getting the max len between all buttons
+            max_len_of_button = 0
+            for butt in button:
+                max_len_of_button = max ( max_len_of_button, len(butt) )
+
+            for i in range( len(button) ):
+                spacestr = ( (max_len_of_button - len(button[i]) + 1) // 2 ) * " "
+                button_size = 3 + 2*len( spacestr ) + len( button[i] )
+
+
+            # Centering calculations
+            start_x_title = int((width // 2) - (len(title) // 2) - len(title) % 2)
+            start_x_subtitle = int((width // 2) - (len(subtitle) // 2) - len(subtitle) % 2)
+
+            start_y = int((height // 5) - 2)
+
+            start_x_text = []
+
+            for i in range(N_CONFIG):
+                start_x_text.append( int((width // 2) - (len(button[i]) // 2) - (len(button[i]) % 2)) )
+
+            start_x_button = int((width // 2) - (max_len_of_button // 2) - (max_len_of_button % 2)) - 2
+
+            start_y_first_button = start_y + 3
+            whstr = "Width: {}, Height: {}".format(width, height)
+            screen.addstr(0, 0, whstr, curses.color_pair(1))
+
+            # Render status bar
+            screen.attron(curses.color_pair(3))
+            screen.addstr(height-1, 0, statusbarstr)
+            screen.addstr(height-1, len(statusbarstr), " " * (width - len(statusbarstr) - 1))
+            screen.attroff(curses.color_pair(3))
+
+            # Turning on attributes for title
+            screen.attron(curses.color_pair(2))
+            screen.attron(curses.A_BOLD)
+
+            # Rendering title
+            screen.addstr(start_y, start_x_title, title)
+
+            # Turning off attributes for title
+            screen.attroff(curses.color_pair(2))
+            screen.attroff(curses.A_BOLD)
+
+            # Print rest of text
+            screen.addstr(start_y + 1, start_x_subtitle, subtitle)
+
+            for i in range( len(button) ):
+                textpad.rectangle(screen, start_y_first_button + (i*5), start_x_button ,
+                start_y_first_button + (i*5) + 3, start_x_button + button_size )
+
+                if choicebutton[i] == "X":
+                    screen.attron(curses.color_pair(3))
+
+                screen.addstr( start_y_first_button + (i*5) + 1, start_x_text[i], button[i] )
+
+                if i == 0:
+                    volume_bar = "[" + ( "x" * self.volume ) + ( " " * ( MAX_VOLUME - self.volume ) ) + "]"
+                    screen.addstr( start_y_first_button + (i*5) + 2,
+                                   int((width // 2) - (len(volume_bar) // 2) - (len(volume_bar) % 2)),
+                                   volume_bar )
+                elif i == 1:
+                    char_choice = ""
+                    for j in range( CHAR_OPTIONS ):
+
+                        if self.pchar == intPchar[ j ]:
+                            char_choice = char_choice + "["
+                        else:
+                            char_choice = char_choice + " "
+
+                        char_choice = char_choice + intPchar[ j ].value
+
+                        if self.pchar == intPchar[ j ]:
+                            char_choice = char_choice + "] "
+                        else:
+                            char_choice = char_choice + "  "
+
+                    screen.addstr( start_y_first_button + (i*5) + 2,
+                                   #int((width // 2) - (len(char_choice) // 2) - (len(char_choice) % 2)) - ( 4 *  ),
+                                   int((width // 2) - (len(char_choice) % 2)) - ( 4 * pcharInt[ self.pchar ]) - 2,
+                                   char_choice )
+
+                elif i == 2:
+                    screen.addstr( start_y_first_button + (i*5) + 2, (width // 2) - ( 1 - (width % 2) ) - 1,
+                                   ( "[" + choicebutton[i] + "]") )
+
+                if choicebutton[i] == "X":
+                    screen.attroff(curses.color_pair(3))
+
+            screen.move(cursor_y, cursor_x)
+            screen.refresh()
+
+            k = screen.getch()
+
         screen.clear()
-        screen.addstr(20, 20, "In the future you will adjust your settings here...")
         screen.refresh()
-        curses.napms( 2000 )
 
         return 0
 
@@ -328,9 +493,9 @@ class Game:
                 if element == sq.EMPTY:
                     screen.addch(y,x,element.value, curses.color_pair(1))
                 elif element == sq.P1:
-                    screen.addch(y,x,element.value, curses.color_pair(2))
+                    screen.addch(y,x,self.pchar.value, curses.color_pair(2))
                 elif element == sq.P2:
-                    screen.addch(y,x,element.value, curses.color_pair(4))
+                    screen.addch(y,x,self.pchar.value, curses.color_pair(4))
 
                 x += 2
 
