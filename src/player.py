@@ -16,3 +16,6 @@ class Player:
 
     def get_direction( self ):
         return self.direction
+
+    def get_coord( self ):
+        return self.x, self.y

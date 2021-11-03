@@ -3,6 +3,7 @@ from board import Board
 import threading
 import socket
 from client_protocol import Protocol_client
+from ai import AI
 from enums import Squares as sq
 from enums import Directions as dir
 from consts import *
@@ -14,7 +15,7 @@ strPlayer = { '1' : sq.P1, '2' : sq.P2 }
 playerStr = { sq.P1 : '1', sq.P2 : '2' }
 
 class Game:
-    def __init__( self, n_players ):
+    def __init__( self, n_players, n_ais ):
         self.board = Board( N )
         self.running = True
 
@@ -23,7 +24,10 @@ class Game:
         self.ready = False
         self.n_connections = 0
         self.connections = []
+        self.AIs = []
+
         self.n_players = n_players
+        self.n_ais = n_ais
         self.last_msg = { sq.P1 : '1110', sq.P2 : '2120' }
 
         self.server = socket.socket()
@@ -35,9 +39,13 @@ class Game:
         if( self.ready ): return 0
 
         print("[PLAYERS CONNECTED] assigning players to its avatars")
-        for player_number in range( len( self.connections ) ):
+        for player_number in range( self.n_players ):
             assign_msg = str(player_number + 1) + "***"
             self.connections[ player_number ].send( assign_msg.encode('utf-8') )
+
+        for player_number in range( self.n_players, self.n_players + self.n_ais ):
+            assign_msg = str(player_number + 1) + "***"
+            self.AIs[ player_number - self.n_players ].assign_player( assign_msg )
 
         self.ready = True
 
@@ -48,7 +56,7 @@ class Game:
     def handle_player( self, conn, addr ):
         print("[NEW CONNECTION]" + str(addr[0]) + ":" + str(addr[1]) + " connected")
 
-        while( self.n_connections < self.n_players ):
+        while( self.n_connections < self.n_players + self.n_ais ):
             pass
 
         self.lock.acquire()
@@ -105,6 +113,10 @@ class Game:
         return ( destination, int( dirStr[ dir_idx ] ), who_moved, end_game )
 
     def simulate( self ):
+        for ai_player in self.AIs:
+            ai_move = ai_player.start()
+            self.store_dir( ai_move )
+
         for player in playerStr.keys():
             if( not self.running ): return 0
 
@@ -115,11 +127,15 @@ class Game:
                 player_move = str( player_number + 1 ) + server_msg
                 self.send_move( self.connections[ player_number ], player_move )
 
+            for player_number in range( self.n_players, self.n_players + self.n_ais ):
+                player_move = str( player_number + 1 ) + server_msg
+                self.AIs[ player_number - self.n_players ].process_input( player_move )
+
     def run( self ):
         print("[WAITING] Waiting for connections...")
         self.server.listen()
         thread_list = []
-        while( self.n_connections < self.n_players ):
+        while( len(self.connections) < self.n_players ):
             conn, addr = self.server.accept()
             thread = threading.Thread( target=self.handle_player, args=( conn, addr ) )
             thread_list.append( thread )
@@ -127,6 +143,16 @@ class Game:
             thread.name = "player" + str(self.n_connections)
             self.connections.append(conn)
             thread.start()
+
+        while( len(self.AIs) < self.n_ais ):
+            self.lock.acquire()
+            self.AIs.append( AI() )
+            self.n_connections += 1
+            self.lock.release()
+
+
+        while( not self.ready ):
+            pass
 
         time_frame = 0.0
         t1 = time.time()

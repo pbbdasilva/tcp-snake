@@ -60,7 +60,6 @@ class Board:
                 print(element.value,end = ' ')
 
             print('\n')
-        print('end')
 
 def main():
     b = Board( 10)
