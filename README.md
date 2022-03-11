@@ -17,7 +17,7 @@ Both server and client use a multi-threaded environment due to blocking IO. So, 
 
 ### Server
 
-The main thread listen for new connections until it reaches the desired number of players. The IO from players is handled separated at each thread. Whilst, the game simulation runs at the main thread and updates the board after each TIME_STEP. The server has authority towards moves, hence, each move from a player is only updated after the server process the move.
+The main thread listens for new connections until it reaches the desired number of players. The IO from players is handled separated at each thread. Whilst, the game simulation runs at the main thread and updates the board after each TIME_STEP. The server has authority towards moves, hence, each move from a player is only updated after the server processes the move.
 
 ### Client
 
